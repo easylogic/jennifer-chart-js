@@ -13,7 +13,7 @@ module.exports = function(grunt) {
     coffee : {
       compile : {
         files : {
-          './src/app.js' : "./coffee/main.coffee"
+          './src/jennifer-chart.js' : "./coffee/jennifer-chart.coffee"
         }
       }
     },
@@ -91,7 +91,7 @@ module.exports = function(grunt) {
            "coffee/chart/widget/legend.coffee"
            */
         ],
-        dest: "coffee/main.coffee"
+        dest: "coffee/jennifer-chart.coffee"
       }
     }
   })
