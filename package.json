@@ -1,0 +1,12 @@
+{
+  "name": "jennifer-chart",
+  "version": "0.0.1",
+  "devDependencies" :{
+    "grunt" : "0.4.5",
+    "grunt-contrib-coffee" : "*",
+    "grunt-contrib-concat" : "*",
+    "grunt-contrib-clean" : "*",
+    "grunt-contrib-watch" : "*",
+    "load-grunt-tasks" : "*"
+  }
+}
