@@ -1,6 +1,3 @@
-###
-Time Class
-###
 class Time
   @years : "years"
   @months : "months"

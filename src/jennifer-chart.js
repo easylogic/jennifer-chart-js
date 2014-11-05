@@ -1,42 +1,14 @@
 
 /*
-Time Class
+TimeUtil Class
+  add()
+  format()
  */
 
 (function() {
-  var DomUtil, Path, Polygon, Polyline, Svg, Time, TimeUtil, Transform,
+  var ColorUtil, DomUtil, MathUtil, Path, Polygon, Polyline, Scale, Svg, TimeUtil, Transform,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  Time = (function() {
-    function Time() {}
-
-    Time.years = "years";
-
-    Time.months = "months";
-
-    Time.days = "days";
-
-    Time.hours = "hours";
-
-    Time.minutes = "minutes";
-
-    Time.seconds = "seconds";
-
-    Time.milliseconds = "milliseconds";
-
-    Time.weeks = "weeks";
-
-    return Time;
-
-  })();
-
-
-  /*
-  TimeUtil Class
-    add()
-    format()
-   */
 
   TimeUtil = (function() {
     function TimeUtil() {}
@@ -628,5 +600,408 @@ Time Class
     return Polyline;
 
   })(Transform);
+
+  MathUtil = (function() {
+    var _max, _min, _niceMax, _niceMin, _range, _tickSpacing, _ticks;
+
+    function MathUtil() {}
+
+    MathUtil.rotate = function(x, y, radian) {
+      return {
+        x: x * Math.cos(radian) - y * Math.sin(radian),
+        y: x * Math.sin(radian) + y * Math.cos(radian)
+      };
+    };
+
+    MathUtil.radian = function(degree) {
+      return degree * Math.PI / 180;
+    };
+
+    MathUtil.degree = function(radian) {
+      return radian * 180 / Math.PI;
+    };
+
+    MathUtil.interpolateNumber = function(a, b) {
+      return function(t) {
+        return a + (b - a) * t;
+      };
+    };
+
+    MathUtil.interpolateRound = function(a, b) {
+      var f;
+      f = MathUtil.interpolateNumber(a, b);
+      return function(t) {
+        return Math.round(f(t));
+      };
+    };
+
+    MathUtil.niceNum = function(range, round) {
+      var exponent, fraction, niceFraction;
+      exponent = Math.floor(Math.log(range) / Math.LN10);
+      fraction = range / Math.pow(10, exponent);
+      if (round) {
+        if (fraction < 1.5) {
+          niceFraction = 1;
+        } else if (fraction < 3) {
+          niceFraction = 2;
+        } else if (fraction < 7) {
+          niceFraction = 5;
+        } else {
+          niceFraction = 10;
+        }
+      } else {
+        if (fraction <= 1) {
+          niceFraction = 1;
+        } else if (fraction <= 2) {
+          niceFraction = 2;
+        } else if (fraction <= 5) {
+          niceFraction = 5;
+        } else {
+          niceFraction = 10;
+        }
+      }
+      return niceFraction * Math.pow(10, exponent);
+    };
+
+    MathUtil.nice = function(min, max, ticks, isNice) {
+      return isNice = isNice ? isNice : false;
+    };
+
+    if (min > max) {
+      _max = min;
+      _min = max;
+    } else {
+      _min = min;
+      _max = max;
+      _ticks = ticks;
+      _tickSpacing = 0;
+      _niceMin;
+      _niceMax;
+      _range = isNice ? MathUtil.niceNum(_max - _min, false) : _max - _min;
+      _tickSpacing = isNice ? MathUtil.niceNum(_range / _ticks, true) : _range / _ticks;
+      _niceMin = isNice ? Math.floor(_min / _tickSpacing) * _tickSpacing : _min;
+      _niceMax = isNice ? Math.floor(_max / _tickSpacing) * _tickSpacing : _max;
+      ({
+        min: _niceMin,
+        max: _niceMax,
+        range: _range,
+        spacing: _tickSpacing
+      });
+    }
+
+    return MathUtil;
+
+  })();
+
+  ColorUtil = (function() {
+    function ColorUtil() {}
+
+    ColorUtil.regex = /(linear|radial)\((.*)\)(.*)/i;
+
+    ColorUtil.trim = function(str) {
+      return (str || "").replace(/^\s+|\s+$/g, '');
+    };
+
+    ColorUtil.parse = function(color) {
+      return this.parseGradient(color);
+    };
+
+    ColorUtil.parseGradient = function(color) {
+      var attr, key, matches, obj, stops, type, value, _i, _len;
+      matches = color.match(this.regex);
+      if (!matches) {
+        return color;
+      }
+      type = this.trim(matches[1]);
+      attr = this.parseAttr(type, this.trim(matches[2]));
+      stops = this.parseStop(this.trim(matches[3]));
+      obj = {
+        type: type
+      };
+      for (value = _i = 0, _len = attr.length; _i < _len; value = ++_i) {
+        key = attr[value];
+        obj[key] = value;
+      }
+      obj.stops = stops;
+      return obj;
+    };
+
+    ColorUtil.parseStop = function(stop) {
+      var arr, count, dist, end, endOffset, i, index, offset, start, startOffset, stop_list, stops, value, _i, _j, _len, _len1;
+      stop_list = stop.split(",");
+      stops = [];
+      for (_i = 0, _len = stop_list.length; _i < _len; _i++) {
+        stop = stop_list[_i];
+        arr = stop.split(" ");
+        if (arr.length === 0) {
+          continue;
+        }
+        if (arr.length === 1) {
+          stops.push({
+            "stop-color": arr[0]
+          });
+        } else if (arr.length === 2) {
+          stops.push({
+            "offset": arr[0],
+            "stop-color": arr[1]
+          });
+        } else if (arr.length === 3) {
+          stops.push({
+            "offset": arr[0],
+            "stop-color": arr[1],
+            "stop-opacity": arr[2]
+          });
+        }
+      }
+      start = -1;
+      end = -1;
+      i = 0;
+      for (_j = 0, _len1 = stops.length; _j < _len1; _j++) {
+        stop = stops[_j];
+        if (i === 0) {
+          if (!stop.offset) {
+            stop.offset = 0;
+          }
+        } else if (i === len - 1) {
+          if (!stop.offset) {
+            stop.offset = 1;
+          }
+        }
+        if (start === -1 && typeof stop.offset === 'undefined') {
+          start = i;
+        } else if (end === -1 && typeof stop.offset === 'undefined') {
+          end = i;
+        }
+        count = end - start;
+        endOffset = stops[end].offset.indexOf("%") > -1 ? parseFloat(stops[end].offset) / 100 : stops[end].offset;
+        startOffset = stops[start].offset.indexOf("%") > -1 ? parseFloat(stops[start].offset) / 100 : stops[start].offset;
+        dist = endOffset - startOffset;
+        value = dist / count;
+        offset = startOffset + value;
+        index = start + 1;
+        while (index < end) {
+          stops[index].offset = offset;
+          offset += value;
+          index++;
+        }
+        start = end;
+        end = -1;
+        i++;
+      }
+      return stops;
+    };
+
+    ColorUtil.parseAttr = function(type, str) {
+      var arr, i;
+      if (type === 'linear') {
+        switch (str) {
+          case "":
+          case "left":
+            return {
+              x1: 0,
+              y1: 0,
+              x2: 1,
+              y2: 0,
+              direction: "left"
+            };
+          case "right":
+            return {
+              x1: 1,
+              y1: 0,
+              x2: 0,
+              y2: 0,
+              direction: str
+            };
+          case "top":
+            return {
+              x1: 0,
+              y1: 0,
+              x2: 0,
+              y2: 1,
+              direction: str
+            };
+          case "bottom":
+            return {
+              x1: 0,
+              y1: 1,
+              x2: 0,
+              y2: 0,
+              direction: str
+            };
+          case "top left":
+            return {
+              x1: 0,
+              y1: 0,
+              x2: 1,
+              y2: 1,
+              direction: str
+            };
+          case "top right":
+            return {
+              x1: 1,
+              y1: 0,
+              x2: 0,
+              y2: 1,
+              direction: str
+            };
+          case "bottom left":
+            return {
+              x1: 0,
+              y1: 1,
+              x2: 1,
+              y2: 0,
+              direction: str
+            };
+          case "bottom right":
+            return {
+              x1: 1,
+              y1: 1,
+              x2: 0,
+              y2: 0,
+              direction: str
+            };
+          default:
+            arr = str.split(",");
+            i = 0;
+            while (i < arr.length) {
+              if (arr[i].indexOf("%") === -1) {
+                arr[i] = parseFloat(arr[i]);
+              }
+              i++;
+            }
+            return {
+              x1: arr[0],
+              y1: arr[1],
+              x2: arr[2],
+              y2: arr[3]
+            };
+        }
+      } else {
+        arr = str.split(",");
+        i = 0;
+        while (i < arr.length) {
+          if (arr[i].indexOf("%") === -1) {
+            arr[i] = parseFloat(arr[i]);
+          }
+          i++;
+        }
+        return {
+          cx: arr[0],
+          cy: arr[1],
+          r: arr[2],
+          fx: arr[3],
+          fy: arr[4]
+        };
+      }
+    };
+
+    return ColorUtil;
+
+  })();
+
+  Scale = (function() {
+    var _clamp, _domain, _isRound, _key, _range, _rangeBand;
+
+    _rangeBand = 0;
+
+    _isRound = false;
+
+    _clamp = false;
+
+    _domain = [];
+
+    _range = [];
+
+    _key = "";
+
+    function Scale(domain, range) {
+      _domain = domain;
+      _range = range;
+      this.init();
+    }
+
+    Scale.prototype.init = function() {};
+
+    Scale.prototype.clamp = function(clamp) {
+      if (arguments.length === 0) {
+        return _clamp;
+      } else {
+        _clamp = clamp;
+        return this;
+      }
+    };
+
+    Scale.prototype.get = function(x) {
+      return 0;
+    };
+
+    Scale.prototype.max = function() {
+      return Math.max(_domain[0], _domain[_domain.length - 1]);
+    };
+
+    Scale.prototype.min = function() {
+      return Math.min(_domain[0], _domain[_domain.length - 1]);
+    };
+
+    Scale.prototype.rangeBand = function() {
+      return _rangeBand;
+    };
+
+    Scale.prototype.rate = function(value, max) {
+      return this.get(this.max() * (value / max));
+    };
+
+    Scale.prototype.invert = function(y) {
+      return 0;
+    };
+
+    Scale.prototype.domain = function(values) {
+      var value;
+      if (arguments.length === 0) {
+        return _domain;
+      } else {
+        _domain = (function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = values.length; _i < _len; _i++) {
+            value = values[_i];
+            _results.push(value);
+          }
+          return _results;
+        })();
+        return this;
+      }
+    };
+
+    Scale.prototype.range = function(values) {
+      var value;
+      if (arguments.length === 0) {
+        return _range;
+      } else {
+        _range = (function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = values.length; _i < _len; _i++) {
+            value = values[_i];
+            _results.push(value);
+          }
+          return _results;
+        })();
+        return this;
+      }
+    };
+
+    Scale.prototype.round = function() {
+      return _isRound;
+    };
+
+    Scale.prototype.rangeRound = function(values) {
+      _isRound = true;
+      return this.range(values);
+    };
+
+    return Scale;
+
+  })();
 
 }).call(this);

@@ -17,25 +17,32 @@ module.exports = function(grunt) {
         }
       }
     },
+
+    docco: {
+        debug: {
+            src: ['coffee/jennifer-chart.coffee'],
+              options: {
+                  output: 'docs/'
+              }
+          }
+    },
+
     concat : {
       dist: {
         src: [
           // util
 
-          "coffee/util/Time.coffee",
           "coffee/util/TimeUtil.coffee",
           "coffee/util/DomUtil.coffee",
           "coffee/util/dom/Transform.coffee",
           "coffee/util/dom/Path.coffee",
           "coffee/util/dom/Svg.coffee",
           "coffee/util/dom/Polygon.coffee",
-          "coffee/util/dom/Polyline.coffee"
-
-          /*
+          "coffee/util/dom/Polyline.coffee" ,
            "coffee/util/MathUtil.coffee",
            "coffee/util/ColorUtil.coffee",
            "coffee/util/scale/Scale.coffee",
-           "coffee/util/scale/LinearScale.coffee",
+           "coffee/util/scale/LinearScale.coffee"/*,,
            "coffee/util/scale/OrdinalScale.coffee",
            "coffee/util/scale/TimeScale.coffee",
 
@@ -98,8 +105,9 @@ module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-contrib-coffee')
   grunt.loadNpmTasks('grunt-contrib-concat')
-
+  grunt.loadNpmTasks('grunt-docco');
   grunt.loadNpmTasks('grunt-contrib-watch')
 
-  grunt.registerTask("default", ["concat", "coffee"]);
+  grunt.registerTask("default", ["concat", "coffee", "docco"]);
+  grunt.registerTask("compile", ["concat", "coffee"]);
 }
