@@ -2,6 +2,7 @@ class Path extends Transform
   paths : [],
   constructor : (attr) ->
     super "path", attr
+    @paths = []
 
   moveTo: (x, y) ->
     @paths.push "m#{x},#{y}"
