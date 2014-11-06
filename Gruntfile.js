@@ -42,13 +42,13 @@ module.exports = function(grunt) {
            "coffee/util/MathUtil.coffee",
            "coffee/util/ColorUtil.coffee",
            "coffee/util/scale/Scale.coffee",
-           "coffee/util/scale/LinearScale.coffee"/*,,
+           "coffee/util/scale/LinearScale.coffee",
            "coffee/util/scale/OrdinalScale.coffee",
            "coffee/util/scale/TimeScale.coffee",
 
            // chart (core)
            "coffee/chart/draw.coffee",
-           "coffee/chart/builder.coffee",
+           "coffee/chart/ChartBuilder.coffee",
 
            // chart.theme
            "coffee/chart/theme/jennifer.coffee",
@@ -57,12 +57,12 @@ module.exports = function(grunt) {
            "coffee/chart/theme/pastel.coffee",
 
            // chart.grid
-           "coffee/chart/grid/core.coffee",
-           "coffee/chart/grid/block.coffee",
-           "coffee/chart/grid/date.coffee",
-           "coffee/chart/grid/radar.coffee",
-           "coffee/chart/grid/range.coffee",
-           "coffee/chart/grid/rule.coffee",
+           "coffee/chart/grid/Grid.coffee",
+           "coffee/chart/grid/BlockGrid.coffee",
+           "coffee/chart/grid/DateGrid.coffee",
+           "coffee/chart/grid/RadarGrid.coffee",
+           "coffee/chart/grid/RangeGrid.coffee",
+           "coffee/chart/grid/RuleGrid.coffee",/*,,,,
 
            // chart.brush
            "coffee/chart/brush/core.coffee",
@@ -97,6 +97,7 @@ module.exports = function(grunt) {
            "coffee/chart/widget/title.coffee",
            "coffee/chart/widget/legend.coffee"
            */
+            "coffee/Module.coffee"
         ],
         dest: "coffee/jennifer-chart.coffee"
       }

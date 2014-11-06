@@ -23,7 +23,12 @@ class Scale
   get : (x) -> 0
   max : () -> Math.max(_domain[0], _domain[_domain.length-1])
   min : () -> Math.min(_domain[0], _domain[_domain.length-1])
-  rangeBand : () -> _rangeBand
+  rangeBand : (band) ->
+    if arguments.length == 0
+      _rangeBand
+    else
+      _rangeBand = band
+      @
   rate : (value, max) ->
     @get (@max() * (value / max))
   invert : (y) -> 0

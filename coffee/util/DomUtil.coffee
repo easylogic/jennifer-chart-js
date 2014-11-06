@@ -81,6 +81,7 @@ class DomUtil
   symbol : (attr) -> @append(el("symbol", attr))
   clipPath : (attr) -> @append(el("clip-path", attr))
   g : (attr) -> @append(el("g", attr))
+  group : (attr) -> @g(attr)
   rect : (attr) -> @append(el("rect", attr))
   line : (attr) -> @append(el("line", attr))
   circle : (attr) -> @append(el("circle", attr))
@@ -146,3 +147,6 @@ class DomUtil
         return true
 
     false
+
+el = () ->
+  DomUtil.el.apply(null, arguments)

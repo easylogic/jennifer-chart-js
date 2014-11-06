@@ -48,14 +48,13 @@ class MathUtil
     niceFraction * Math.pow(10, exponent)
 
   @nice : (min, max, ticks, isNice) ->
-	  isNice = if isNice then isNice else false
-
-		if min > max
-				_max = min
-				_min = max
-		else
-				_min = min
-				_max = max
+    isNice = if isNice then isNice else false
+    if min > max
+      _max = min
+      _min = max
+    else
+      _min = min
+      _max = max
 
     _ticks = ticks;
     _tickSpacing = 0;
