@@ -89,7 +89,7 @@ class RangeGrid  extends Grid
       axis = root.group().translate(0, values[i])
 
       axis.append(@line(
-        x2 : if hasLine then full_width else -bar
+        x2 : if @options.line then full_width else -bar
         stroke : @chart.theme(isZero, "gridActiveBorderColor", "gridAxisBorderColor")
         "stroke-width" : @chart.theme(isZero, "gridActiveBorderWidth", "gridAxisBorderWidth")
       ))
@@ -120,7 +120,7 @@ class RangeGrid  extends Grid
       axis = root.group().translate(0, values[i])
 
       axis.append(@line(
-        x2 : if hasLine then -full_width else bar
+        x2 : if @options.line then -full_width else bar
         stroke : @chart.theme(isZero, "gridActiveBorderColor", "gridAxisBorderColor")
         "stroke-width" : @chart.theme(isZero, "gridActiveBorderWidth", "gridAxisBorderWidth")
       ))
@@ -129,7 +129,7 @@ class RangeGrid  extends Grid
 
       axis.append(@chart.text( {
         x : bar+4
-        y : bar
+        y : bar-2.5
         "text-anchor" : "start"
         fill : @chart.theme(isZero, "gridActiveFontColor", "gridFontColor")
       }, textValue ))

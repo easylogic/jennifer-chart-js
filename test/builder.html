@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Chart Builder Test </title>
+    <script src="../src/jennifer-chart.js"></script>
+</head>
+<body>
+    <div id="chart"></div>
+    <script>
+        var svg = new ChartBuilder({
+            theme : "dark",
+            padding : { left : 100 },
+            data : [
+                { quarter : "1Q", sales : 50, profit : 35 },
+                { quarter : "2Q", sales : -20, profit : -30 },
+                { quarter : "3Q", sales : 10, profit : -5 },
+                { quarter : "4Q", sales : 30, profit : 25 }
+            ],
+            grid : {
+                x : {
+                    target : "quarter"
+                },
+                y : [{
+                    type : "range",
+                    target : ["sales", "profit"],
+                    step : 10
+                },{
+                    type : "range",
+                    target : ["sales", "profit"],
+                    step : 10,
+                    dist : 50
+                }]
+            }/*,
+             brush : {
+             type : "bar",
+             target : [ "sales", "profit"]
+             }*/
+        }).render()
+
+        document.getElementById("chart").innerHTML = svg;
+    </script>
+</body>
+</html>

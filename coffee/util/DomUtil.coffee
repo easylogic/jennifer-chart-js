@@ -16,12 +16,13 @@ class DomUtil
     @attrs[key] = value
     @
 
-  get : (key) ->
-    @attrs[key]
-
+  get : (key) -> @attrs[key]
   css : (key, value) ->
 
-    if typeof value is not undefined
+    if typeof key is "object"
+      for k, v of key
+        @styles[k] = v
+    else if typeof value isnt "undefined"
       @styles[key] = value
       @
     else
@@ -42,11 +43,9 @@ class DomUtil
     str.join ";"
 
   collapseAttr : () ->
-
     style = @collapseStyle()
 
-    if @attrs.style
-      @attrs.style += ";" + style
+    @put "style", style
 
     str = for key, value of @attrs
       "#{key}=\"#{value}\""

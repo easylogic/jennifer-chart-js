@@ -125,7 +125,7 @@ class ChartBuilder extends Draw
       if _options.padding is 'empty'
         _padding = left : 0, right : 0, top : 0, bottom : 0
       else
-        _padding = _options.padding
+        _padding = extend({left : 50, right : 50, top : 50, bottom : 50}, _options.padding)
 
   drawBefore : () ->
     series = deepClone _options.series
@@ -280,27 +280,25 @@ class ChartBuilder extends Draw
 
           Grid = grids[g[keyIndex].type || "block"]
 
-          obj = new Grid(orient, @, g[keyIndex]).render()
+          newGrid = new Grid(orient, @, g[keyIndex]);
+          root = newGrid.render()
           dist = g[keyIndex].dist || 0
 
+          console.log(@x2())
+
           if k == 'y'
-            obj.root.translate @x() - dist, @y()
+            root.translate @x() - dist, @y()
           else if k == 'y1'
-            obj.root.translate @x2() + dist, @y()
+            root.translate @x2() + dist, @y()
           else if k == 'x'
-            obj.root.translate @x(), @y2() + dist
+            root.translate @x(), @y2() + dist
           else if k == 'x1'
-            obj.root.translate @x(), @y() - dist
+            root.translate @x(), @y() - dist
 
+          @root.append root
 
-          @root.append obj.root
-
-          _scales[k][keyIndex] = obj.scale
+          _scales[k][keyIndex] = newGrid
           keyIndex++
-
-
-
-
 
   createGradient : (obj, hashKey) ->
     if typeof hashKey isnt 'undefined' and _hash[hashKey]
@@ -310,14 +308,12 @@ class ChartBuilder extends Draw
     obj.id = id;
 
     if obj.type is 'linear'
-      g = @svg.linearGradient(obj);
+      g = @defs.linearGradient(obj);
     else if obj.type is 'radial'
-      g = @svg.radialGradient(obj)
+      g = @defs.radialGradient(obj)
 
     for stop in obj.stops || []
       g.stop(stop)
-
-    @defs.append(g)
 
     if typeof hashKey isnt 'undefined'
       _hash[hashKey] = id
@@ -415,14 +411,14 @@ class ChartBuilder extends Draw
       return _theme
     else if arguments.length == 1
       if _theme[key]
-        if key.indexOf("Color") > -1 and _theme[key]
-          return @getColor(this, _theme[key]);
+        if key.indexOf("Color") > -1
+          return @getColor(_theme[key]);
         else
           return _theme[key]
     else if arguments.length is 3
       val = if (key) then value else value2;
       if val.indexOf("Color") > -1 and _theme[val]
-        return @getColor(this, _theme[val])
+        return @getColor(_theme[val])
       else
         return _theme[val]
 
@@ -455,6 +451,7 @@ class ChartBuilder extends Draw
     @drawWidget()
     console.log('start3')
 
-    @svg.css background: @theme("backgroundColor")
+
     ###
+    @svg.css background: @theme("backgroundColor")
     @svg.render()

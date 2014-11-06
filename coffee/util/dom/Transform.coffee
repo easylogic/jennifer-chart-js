@@ -1,5 +1,8 @@
 class Transform extends DomUtil
-  orders : {}
+  constructor: (@tagName, @attr) ->
+    super @tagName, @attr
+    @orders = {}
+
   translate : (x, y) ->
     @orders.translate = [x, y].join(" ")
     @

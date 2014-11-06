@@ -25,23 +25,22 @@ class BlockGrid extends Grid
     while i < len
       d = domain[i]
 
-      if d is "" then continue
+      if d isnt ""
+        axis = root.group().translate(points[i], 0)
 
-      axis = root.group().translate(points[i], 0)
+        axis.append(@line(
+          x1 : -half_band
+          y1 : 0
+          x2 : -half_band
+          y2 : if hasLine then full_height else -bar
+        ))
 
-      axis.append(@line(
-        x1 : -half_band
-        y1 : 0
-        x2 : -half_band
-        y2 : if hasLine then full_height else -bar
-      ))
-
-      axis.append(@chart.text({
-        x: 0,
-        y: -20
-        "text-anchor": "middle"
-        fill: @chart.theme("gridFontColor")
-      }, d ))
+        axis.append(@chart.text({
+          x: 0,
+          y: -20
+          "text-anchor": "middle"
+          fill: @chart.theme("gridFontColor")
+        }, d ))
 
       i++
 
@@ -64,23 +63,22 @@ class BlockGrid extends Grid
     while i < len
       d = domain[i]
 
-      if d is "" then continue
+      if d isnt ""
+        axis = root.group().translate(points[i], 0)
 
-      axis = root.group().translate(points[i], 0)
+        axis.append(@line(
+          x1 : -half_band
+          y1 : 0
+          x2 : -half_band
+          y2 : if hasLine then -full_height else bar
+        ))
 
-      axis.append(@line(
-        x1 : -half_band
-        y1 : 0
-        x2 : -half_band
-        y2 : if hasLine then -full_height else bar
-      ))
-
-      axis.append(@chart.text({
-        x: 0,
-        y: 20
-        "text-anchor": "middle"
-        fill: @chart.theme("gridFontColor")
-      }, d))
+        axis.append(@chart.text({
+          x: 0,
+          y: 20
+          "text-anchor": "middle"
+          fill: @chart.theme("gridFontColor")
+        }, d))
 
       i++
 
@@ -102,27 +100,26 @@ class BlockGrid extends Grid
     while i < len
       d = domain[i]
 
-      if d is "" then continue
+      if d isnt ""
+        axis = root.group().translate(0, points[i])
 
-      axis = root.group().translate(0, points[i])
+        axis.append(@line(
+          x2 : if hasLine then full_width else -bar
+        ))
 
-      axis.append(@line(
-        x2 : if hasLine then full_width else -bar
-      ))
-
-      axis.append(@chart.text({
-        x: -bar - 4 ,
-        y: half_band,
-        "text-anchor": "end"
-        fill: @chart.theme("gridFontColor")
-      }, d))
+        axis.append(@chart.text({
+          x: -bar - 4 ,
+          y: half_band + bar/2,
+          "text-anchor": "end"
+          fill: @chart.theme("gridFontColor")
+        }, d))
 
       i++
 
     if !hasFull
       axis = root.group().translate(0, @chart.height())
       axis.append(@line(
-        y2 : if hasLine then full_width else -bar
+        x2 : if hasLine then full_width else -bar
       ))
 
   drawRight : (root) ->
@@ -138,27 +135,26 @@ class BlockGrid extends Grid
     while i < len
       d = domain[i]
 
-      if d is "" then continue
+      if d isnt ""
+        axis = root.group().translate(0, points[i] - half_band)
 
-      axis = root.group().translate(0, points[i] - half_band)
+        axis.append(@line(
+          x2 : if hasLine then -full_width else bar
+        ))
 
-      axis.append(@line(
-        x2 : if hasLine then -full_width else bar
-      ))
-
-      axis.append(@chart.text({
-        x: bar + 4 ,
-        y: half_band,
-        "text-anchor": "start"
-        fill: @chart.theme("gridFontColor")
-      }, d))
+        axis.append(@chart.text({
+          x: bar + 4 ,
+          y: half_band + bar/2,
+          "text-anchor": "start"
+          fill: @chart.theme("gridFontColor")
+        }, d))
 
       i++
 
     if !hasFull
       axis = root.group().translate(0, @chart.height())
       axis.append(@line(
-        y2 : if hasLine then -full_width else bar
+        x2 : if hasLine then -full_width else bar
       ))
 
   drawBefore : () ->
@@ -166,15 +162,14 @@ class BlockGrid extends Grid
 
     width = @chart.width();
     height = @chart.height();
-    max = (@orient == "left" || @orient == "right") ? height : width;
+    max = if (@orient == "left" or @orient == "right") then height else width;
 
     @scale.domain(@options.domain);
 
     if (@options.full)
-      @scale.rangeBands([0, max], 0, 0);
+      @scale.rangeBands([0, max]);
     else
-      @scale.rangePoints([0,max], 0);
-
+      @scale.rangePoints([0,max]);
 
     points = @scale.range();
     domain = @scale.domain();

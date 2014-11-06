@@ -61,7 +61,7 @@ class Grid extends Draw
     if @options.hide
       root.attr( display : "none" )
 
-    {root : root, scale : @ }
+    root
 
   drawCustom  : (root) ->
   drawTop  : (root) ->

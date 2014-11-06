@@ -1,6 +1,9 @@
-ChartBuilder = require("../src/jennifer-chart").ChartBuilder;
+fs = require('fs');
+ChartBuilder = require("../src/jennifer-chart");
 
 var svg = new ChartBuilder({
+    theme : "dark",
+    padding : { left : 100 },
     data : [
         { quarter : "1Q", sales : 50, profit : 35 },
         { quarter : "2Q", sales : -20, profit : -30 },
@@ -8,16 +11,19 @@ var svg = new ChartBuilder({
         { quarter : "4Q", sales : 30, profit : 25 }
     ],
     grid : {
-        y : {
-            target : "quarter",
-            line : true
-        },
         x : {
+            target : "quarter"
+        },
+        y : [{
+            type : "range",
+            target : ["sales", "profit"],
+            step : 10
+        },{
             type : "range",
             target : ["sales", "profit"],
             step : 10,
-            line : true
-        }
+            dist : 50
+        }]
     }/*,
     brush : {
         type : "bar",
@@ -25,5 +31,5 @@ var svg = new ChartBuilder({
     }*/
 }).render()
 
-console.log(svg)
+fs.writeFileSync("./builder.svg", svg);
 

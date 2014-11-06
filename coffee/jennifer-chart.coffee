@@ -50,12 +50,13 @@ class DomUtil
     @attrs[key] = value
     @
 
-  get : (key) ->
-    @attrs[key]
-
+  get : (key) -> @attrs[key]
   css : (key, value) ->
 
-    if typeof value is not undefined
+    if typeof key is "object"
+      for k, v of key
+        @styles[k] = v
+    else if typeof value isnt "undefined"
       @styles[key] = value
       @
     else
@@ -76,11 +77,9 @@ class DomUtil
     str.join ";"
 
   collapseAttr : () ->
-
     style = @collapseStyle()
 
-    if @attrs.style
-      @attrs.style += ";" + style
+    @put "style", style
 
     str = for key, value of @attrs
       "#{key}=\"#{value}\""
@@ -185,7 +184,10 @@ class DomUtil
 el = () ->
   DomUtil.el.apply(null, arguments)
 class Transform extends DomUtil
-  orders : {}
+  constructor: (@tagName, @attr) ->
+    super @tagName, @attr
+    @orders = {}
+
   translate : (x, y) ->
     @orders.translate = [x, y].join(" ")
     @
@@ -848,7 +850,7 @@ class ChartBuilder extends Draw
       if _options.padding is 'empty'
         _padding = left : 0, right : 0, top : 0, bottom : 0
       else
-        _padding = _options.padding
+        _padding = extend({left : 50, right : 50, top : 50, bottom : 50}, _options.padding)
 
   drawBefore : () ->
     series = deepClone _options.series
@@ -1003,27 +1005,25 @@ class ChartBuilder extends Draw
 
           Grid = grids[g[keyIndex].type || "block"]
 
-          obj = new Grid(orient, @, g[keyIndex]).render()
+          newGrid = new Grid(orient, @, g[keyIndex]);
+          root = newGrid.render()
           dist = g[keyIndex].dist || 0
 
+          console.log(@x2())
+
           if k == 'y'
-            obj.root.translate @x() - dist, @y()
+            root.translate @x() - dist, @y()
           else if k == 'y1'
-            obj.root.translate @x2() + dist, @y()
+            root.translate @x2() + dist, @y()
           else if k == 'x'
-            obj.root.translate @x(), @y2() + dist
+            root.translate @x(), @y2() + dist
           else if k == 'x1'
-            obj.root.translate @x(), @y() - dist
+            root.translate @x(), @y() - dist
 
+          @root.append root
 
-          @root.append obj.root
-
-          _scales[k][keyIndex] = obj.scale
+          _scales[k][keyIndex] = newGrid
           keyIndex++
-
-
-
-
 
   createGradient : (obj, hashKey) ->
     if typeof hashKey isnt 'undefined' and _hash[hashKey]
@@ -1033,14 +1033,12 @@ class ChartBuilder extends Draw
     obj.id = id;
 
     if obj.type is 'linear'
-      g = @svg.linearGradient(obj);
+      g = @defs.linearGradient(obj);
     else if obj.type is 'radial'
-      g = @svg.radialGradient(obj)
+      g = @defs.radialGradient(obj)
 
     for stop in obj.stops || []
       g.stop(stop)
-
-    @defs.append(g)
 
     if typeof hashKey isnt 'undefined'
       _hash[hashKey] = id
@@ -1138,14 +1136,14 @@ class ChartBuilder extends Draw
       return _theme
     else if arguments.length == 1
       if _theme[key]
-        if key.indexOf("Color") > -1 and _theme[key]
-          return @getColor(this, _theme[key]);
+        if key.indexOf("Color") > -1
+          return @getColor(_theme[key]);
         else
           return _theme[key]
     else if arguments.length is 3
       val = if (key) then value else value2;
       if val.indexOf("Color") > -1 and _theme[val]
-        return @getColor(this, _theme[val])
+        return @getColor(_theme[val])
       else
         return _theme[val]
 
@@ -1178,8 +1176,9 @@ class ChartBuilder extends Draw
     @drawWidget()
     console.log('start3')
 
-    @svg.css background: @theme("backgroundColor")
+
     ###
+    @svg.css background: @theme("backgroundColor")
     @svg.render()
 
 JenniferTheme =
@@ -1603,7 +1602,7 @@ class Grid extends Draw
     if @options.hide
       root.attr( display : "none" )
 
-    {root : root, scale : @ }
+    root
 
   drawCustom  : (root) ->
   drawTop  : (root) ->
@@ -1637,23 +1636,22 @@ class BlockGrid extends Grid
     while i < len
       d = domain[i]
 
-      if d is "" then continue
+      if d isnt ""
+        axis = root.group().translate(points[i], 0)
 
-      axis = root.group().translate(points[i], 0)
+        axis.append(@line(
+          x1 : -half_band
+          y1 : 0
+          x2 : -half_band
+          y2 : if hasLine then full_height else -bar
+        ))
 
-      axis.append(@line(
-        x1 : -half_band
-        y1 : 0
-        x2 : -half_band
-        y2 : if hasLine then full_height else -bar
-      ))
-
-      axis.append(@chart.text({
-        x: 0,
-        y: -20
-        "text-anchor": "middle"
-        fill: @chart.theme("gridFontColor")
-      }, d ))
+        axis.append(@chart.text({
+          x: 0,
+          y: -20
+          "text-anchor": "middle"
+          fill: @chart.theme("gridFontColor")
+        }, d ))
 
       i++
 
@@ -1676,23 +1674,22 @@ class BlockGrid extends Grid
     while i < len
       d = domain[i]
 
-      if d is "" then continue
+      if d isnt ""
+        axis = root.group().translate(points[i], 0)
 
-      axis = root.group().translate(points[i], 0)
+        axis.append(@line(
+          x1 : -half_band
+          y1 : 0
+          x2 : -half_band
+          y2 : if hasLine then -full_height else bar
+        ))
 
-      axis.append(@line(
-        x1 : -half_band
-        y1 : 0
-        x2 : -half_band
-        y2 : if hasLine then -full_height else bar
-      ))
-
-      axis.append(@chart.text({
-        x: 0,
-        y: 20
-        "text-anchor": "middle"
-        fill: @chart.theme("gridFontColor")
-      }, d))
+        axis.append(@chart.text({
+          x: 0,
+          y: 20
+          "text-anchor": "middle"
+          fill: @chart.theme("gridFontColor")
+        }, d))
 
       i++
 
@@ -1714,27 +1711,26 @@ class BlockGrid extends Grid
     while i < len
       d = domain[i]
 
-      if d is "" then continue
+      if d isnt ""
+        axis = root.group().translate(0, points[i])
 
-      axis = root.group().translate(0, points[i])
+        axis.append(@line(
+          x2 : if hasLine then full_width else -bar
+        ))
 
-      axis.append(@line(
-        x2 : if hasLine then full_width else -bar
-      ))
-
-      axis.append(@chart.text({
-        x: -bar - 4 ,
-        y: half_band,
-        "text-anchor": "end"
-        fill: @chart.theme("gridFontColor")
-      }, d))
+        axis.append(@chart.text({
+          x: -bar - 4 ,
+          y: half_band + bar/2,
+          "text-anchor": "end"
+          fill: @chart.theme("gridFontColor")
+        }, d))
 
       i++
 
     if !hasFull
       axis = root.group().translate(0, @chart.height())
       axis.append(@line(
-        y2 : if hasLine then full_width else -bar
+        x2 : if hasLine then full_width else -bar
       ))
 
   drawRight : (root) ->
@@ -1750,27 +1746,26 @@ class BlockGrid extends Grid
     while i < len
       d = domain[i]
 
-      if d is "" then continue
+      if d isnt ""
+        axis = root.group().translate(0, points[i] - half_band)
 
-      axis = root.group().translate(0, points[i] - half_band)
+        axis.append(@line(
+          x2 : if hasLine then -full_width else bar
+        ))
 
-      axis.append(@line(
-        x2 : if hasLine then -full_width else bar
-      ))
-
-      axis.append(@chart.text({
-        x: bar + 4 ,
-        y: half_band,
-        "text-anchor": "start"
-        fill: @chart.theme("gridFontColor")
-      }, d))
+        axis.append(@chart.text({
+          x: bar + 4 ,
+          y: half_band + bar/2,
+          "text-anchor": "start"
+          fill: @chart.theme("gridFontColor")
+        }, d))
 
       i++
 
     if !hasFull
       axis = root.group().translate(0, @chart.height())
       axis.append(@line(
-        y2 : if hasLine then -full_width else bar
+        x2 : if hasLine then -full_width else bar
       ))
 
   drawBefore : () ->
@@ -1778,15 +1773,14 @@ class BlockGrid extends Grid
 
     width = @chart.width();
     height = @chart.height();
-    max = (@orient == "left" || @orient == "right") ? height : width;
+    max = if (@orient == "left" or @orient == "right") then height else width;
 
     @scale.domain(@options.domain);
 
     if (@options.full)
-      @scale.rangeBands([0, max], 0, 0);
+      @scale.rangeBands([0, max]);
     else
-      @scale.rangePoints([0,max], 0);
-
+      @scale.rangePoints([0,max]);
 
     points = @scale.range();
     domain = @scale.domain();
@@ -2066,7 +2060,7 @@ class RangeGrid  extends Grid
       axis = root.group().translate(0, values[i])
 
       axis.append(@line(
-        x2 : if hasLine then full_width else -bar
+        x2 : if @options.line then full_width else -bar
         stroke : @chart.theme(isZero, "gridActiveBorderColor", "gridAxisBorderColor")
         "stroke-width" : @chart.theme(isZero, "gridActiveBorderWidth", "gridAxisBorderWidth")
       ))
@@ -2097,7 +2091,7 @@ class RangeGrid  extends Grid
       axis = root.group().translate(0, values[i])
 
       axis.append(@line(
-        x2 : if hasLine then -full_width else bar
+        x2 : if @options.line then -full_width else bar
         stroke : @chart.theme(isZero, "gridActiveBorderColor", "gridAxisBorderColor")
         "stroke-width" : @chart.theme(isZero, "gridActiveBorderWidth", "gridAxisBorderWidth")
       ))
@@ -2106,7 +2100,7 @@ class RangeGrid  extends Grid
 
       axis.append(@chart.text( {
         x : bar+4
-        y : bar
+        y : bar-2.5
         "text-anchor" : "start"
         fill : @chart.theme(isZero, "gridActiveFontColor", "gridFontColor")
       }, textValue ))
@@ -2387,4 +2381,10 @@ class RuleGrid extends RangeGrid
     center = @options.center || false
 
 
-module.exports = {ChartBuilder}
+if typeof module isnt "undefined" and typeof module.exports isnt "undefined"
+  module.exports = ChartBuilder
+else
+  if typeof define is "function" and define.amd
+    define([], () -> ChartBuilder)
+  else
+    window.ChartBuilder = ChartBuilder

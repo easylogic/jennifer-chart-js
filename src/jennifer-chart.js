@@ -89,7 +89,15 @@ TimeUtil Class
     };
 
     DomUtil.prototype.css = function(key, value) {
-      if (typeof value === !void 0) {
+      var k, v, _results;
+      if (typeof key === "object") {
+        _results = [];
+        for (k in key) {
+          v = key[k];
+          _results.push(this.styles[k] = v);
+        }
+        return _results;
+      } else if (typeof value !== "undefined") {
         this.styles[key] = value;
         return this;
       } else {
@@ -125,9 +133,7 @@ TimeUtil Class
     DomUtil.prototype.collapseAttr = function() {
       var key, str, style, value;
       style = this.collapseStyle();
-      if (this.attrs.style) {
-        this.attrs.style += ";" + style;
-      }
+      this.put("style", style);
       str = (function() {
         var _ref, _results;
         _ref = this.attrs;
@@ -370,11 +376,12 @@ TimeUtil Class
   Transform = (function(_super) {
     __extends(Transform, _super);
 
-    function Transform() {
-      return Transform.__super__.constructor.apply(this, arguments);
+    function Transform(tagName, attr) {
+      this.tagName = tagName;
+      this.attr = attr;
+      Transform.__super__.constructor.call(this, this.tagName, this.attr);
+      this.orders = {};
     }
-
-    Transform.prototype.orders = {};
 
     Transform.prototype.translate = function(x, y) {
       this.orders.translate = [x, y].join(" ");
@@ -1430,7 +1437,12 @@ TimeUtil Class
             bottom: 0
           };
         } else {
-          return _padding = _options.padding;
+          return _padding = extend({
+            left: 50,
+            right: 50,
+            top: 50,
+            bottom: 50
+          }, _options.padding);
         }
       }
     };
@@ -1594,7 +1606,7 @@ TimeUtil Class
     };
 
     ChartBuilder.prototype.drawGrid = function() {
-      var Grid, dist, g, grid, k, keyIndex, len, obj, orient, _results;
+      var Grid, dist, g, grid, k, keyIndex, len, newGrid, orient, _results;
       grid = this.grid();
       if (grid !== null) {
         if (grid.type) {
@@ -1628,19 +1640,21 @@ TimeUtil Class
             _results1 = [];
             while (keyIndex < len) {
               Grid = grids[g[keyIndex].type || "block"];
-              obj = new Grid(orient, this, g[keyIndex]).render();
+              newGrid = new Grid(orient, this, g[keyIndex]);
+              root = newGrid.render();
               dist = g[keyIndex].dist || 0;
+              console.log(this.x2());
               if (k === 'y') {
-                obj.root.translate(this.x() - dist, this.y());
+                root.translate(this.x() - dist, this.y());
               } else if (k === 'y1') {
-                obj.root.translate(this.x2() + dist, this.y());
+                root.translate(this.x2() + dist, this.y());
               } else if (k === 'x') {
-                obj.root.translate(this.x(), this.y2() + dist);
+                root.translate(this.x(), this.y2() + dist);
               } else if (k === 'x1') {
-                obj.root.translate(this.x(), this.y() - dist);
+                root.translate(this.x(), this.y() - dist);
               }
-              this.root.append(obj.root);
-              _scales[k][keyIndex] = obj.scale;
+              this.root.append(root);
+              _scales[k][keyIndex] = newGrid;
               _results1.push(keyIndex++);
             }
             return _results1;
@@ -1658,16 +1672,15 @@ TimeUtil Class
       id = this.createId('gradient');
       obj.id = id;
       if (obj.type === 'linear') {
-        g = this.svg.linearGradient(obj);
+        g = this.defs.linearGradient(obj);
       } else if (obj.type === 'radial') {
-        g = this.svg.radialGradient(obj);
+        g = this.defs.radialGradient(obj);
       }
       _ref = obj.stops || [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         stop = _ref[_i];
         g.stop(stop);
       }
-      this.defs.append(g);
       if (typeof hashKey !== 'undefined') {
         _hash[hashKey] = id;
       }
@@ -1794,8 +1807,8 @@ TimeUtil Class
         return _theme;
       } else if (arguments.length === 1) {
         if (_theme[key]) {
-          if (key.indexOf("Color") > -1 && _theme[key]) {
-            return this.getColor(this, _theme[key]);
+          if (key.indexOf("Color") > -1) {
+            return this.getColor(_theme[key]);
           } else {
             return _theme[key];
           }
@@ -1803,7 +1816,7 @@ TimeUtil Class
       } else if (arguments.length === 3) {
         val = key ? value : value2;
         if (val.indexOf("Color") > -1 && _theme[val]) {
-          return this.getColor(this, _theme[val]);
+          return this.getColor(_theme[val]);
         } else {
           return _theme[val];
         }
@@ -1848,9 +1861,10 @@ TimeUtil Class
       console.log('start2')
       @drawWidget()
       console.log('start3')
-      
-      @svg.css background: @theme("backgroundColor")
        */
+      this.svg.css({
+        background: this.theme("backgroundColor")
+      });
       return this.svg.render();
     };
 
@@ -2231,10 +2245,7 @@ TimeUtil Class
           display: "none"
         });
       }
-      return {
-        root: root,
-        scale: this
-      };
+      return root;
     };
 
     Grid.prototype.drawCustom = function(root) {};
@@ -2291,22 +2302,21 @@ TimeUtil Class
       len = points.length;
       while (i < len) {
         d = domain[i];
-        if (d === "") {
-          continue;
+        if (d !== "") {
+          axis = root.group().translate(points[i], 0);
+          axis.append(this.line({
+            x1: -half_band,
+            y1: 0,
+            x2: -half_band,
+            y2: hasLine ? full_height : -bar
+          }));
+          axis.append(this.chart.text({
+            x: 0,
+            y: -20,
+            "text-anchor": "middle",
+            fill: this.chart.theme("gridFontColor")
+          }, d));
         }
-        axis = root.group().translate(points[i], 0);
-        axis.append(this.line({
-          x1: -half_band,
-          y1: 0,
-          x2: -half_band,
-          y2: hasLine ? full_height : -bar
-        }));
-        axis.append(this.chart.text({
-          x: 0,
-          y: -20,
-          "text-anchor": "middle",
-          fill: this.chart.theme("gridFontColor")
-        }, d));
         i++;
       }
       if (!hasFull) {
@@ -2331,22 +2341,21 @@ TimeUtil Class
       len = points.length;
       while (i < len) {
         d = domain[i];
-        if (d === "") {
-          continue;
+        if (d !== "") {
+          axis = root.group().translate(points[i], 0);
+          axis.append(this.line({
+            x1: -half_band,
+            y1: 0,
+            x2: -half_band,
+            y2: hasLine ? -full_height : bar
+          }));
+          axis.append(this.chart.text({
+            x: 0,
+            y: 20,
+            "text-anchor": "middle",
+            fill: this.chart.theme("gridFontColor")
+          }, d));
         }
-        axis = root.group().translate(points[i], 0);
-        axis.append(this.line({
-          x1: -half_band,
-          y1: 0,
-          x2: -half_band,
-          y2: hasLine ? -full_height : bar
-        }));
-        axis.append(this.chart.text({
-          x: 0,
-          y: 20,
-          "text-anchor": "middle",
-          fill: this.chart.theme("gridFontColor")
-        }, d));
         i++;
       }
       if (!hasFull) {
@@ -2371,25 +2380,24 @@ TimeUtil Class
       len = points.length;
       while (i < len) {
         d = domain[i];
-        if (d === "") {
-          continue;
+        if (d !== "") {
+          axis = root.group().translate(0, points[i]);
+          axis.append(this.line({
+            x2: hasLine ? full_width : -bar
+          }));
+          axis.append(this.chart.text({
+            x: -bar - 4,
+            y: half_band + bar / 2,
+            "text-anchor": "end",
+            fill: this.chart.theme("gridFontColor")
+          }, d));
         }
-        axis = root.group().translate(0, points[i]);
-        axis.append(this.line({
-          x2: hasLine ? full_width : -bar
-        }));
-        axis.append(this.chart.text({
-          x: -bar - 4,
-          y: half_band,
-          "text-anchor": "end",
-          fill: this.chart.theme("gridFontColor")
-        }, d));
         i++;
       }
       if (!hasFull) {
         axis = root.group().translate(0, this.chart.height());
         return axis.append(this.line({
-          y2: hasLine ? full_width : -bar
+          x2: hasLine ? full_width : -bar
         }));
       }
     };
@@ -2408,42 +2416,39 @@ TimeUtil Class
       len = points.length;
       while (i < len) {
         d = domain[i];
-        if (d === "") {
-          continue;
+        if (d !== "") {
+          axis = root.group().translate(0, points[i] - half_band);
+          axis.append(this.line({
+            x2: hasLine ? -full_width : bar
+          }));
+          axis.append(this.chart.text({
+            x: bar + 4,
+            y: half_band + bar / 2,
+            "text-anchor": "start",
+            fill: this.chart.theme("gridFontColor")
+          }, d));
         }
-        axis = root.group().translate(0, points[i] - half_band);
-        axis.append(this.line({
-          x2: hasLine ? -full_width : bar
-        }));
-        axis.append(this.chart.text({
-          x: bar + 4,
-          y: half_band,
-          "text-anchor": "start",
-          fill: this.chart.theme("gridFontColor")
-        }, d));
         i++;
       }
       if (!hasFull) {
         axis = root.group().translate(0, this.chart.height());
         return axis.append(this.line({
-          y2: hasLine ? -full_width : bar
+          x2: hasLine ? -full_width : bar
         }));
       }
     };
 
     BlockGrid.prototype.drawBefore = function() {
-      var height, max, width, _ref;
+      var height, max, width;
       this.initDomain();
       width = this.chart.width();
       height = this.chart.height();
-      max = (_ref = this.orient === "left" || this.orient === "right") != null ? _ref : {
-        height: width
-      };
+      max = this.orient === "left" || this.orient === "right" ? height : width;
       this.scale.domain(this.options.domain);
       if (this.options.full) {
-        this.scale.rangeBands([0, max], 0, 0);
+        this.scale.rangeBands([0, max]);
       } else {
-        this.scale.rangePoints([0, max], 0);
+        this.scale.rangePoints([0, max]);
       }
       points = this.scale.range();
       domain = this.scale.domain();
@@ -2794,7 +2799,7 @@ TimeUtil Class
         isZero = ticks[i] === 0 && ticks[i] !== min ? true : false;
         axis = root.group().translate(0, values[i]);
         axis.append(this.line({
-          x2: hasLine ? full_width : -bar,
+          x2: this.options.line ? full_width : -bar,
           stroke: this.chart.theme(isZero, "gridActiveBorderColor", "gridAxisBorderColor"),
           "stroke-width": this.chart.theme(isZero, "gridActiveBorderWidth", "gridAxisBorderWidth")
         }));
@@ -2826,14 +2831,14 @@ TimeUtil Class
         isZero = ticks[i] === 0 && ticks[i] !== min ? true : false;
         axis = root.group().translate(0, values[i]);
         axis.append(this.line({
-          x2: hasLine ? -full_width : bar,
+          x2: this.options.line ? -full_width : bar,
           stroke: this.chart.theme(isZero, "gridActiveBorderColor", "gridAxisBorderColor"),
           "stroke-width": this.chart.theme(isZero, "gridActiveBorderWidth", "gridAxisBorderWidth")
         }));
         textValue = (this.options.format ? this.options.format(ticks[i]) : ticks[i] + "");
         axis.append(this.chart.text({
           x: bar + 4,
-          y: bar,
+          y: bar - 2.5,
           "text-anchor": "start",
           fill: this.chart.theme(isZero, "gridActiveFontColor", "gridFontColor")
         }, textValue));
@@ -3150,8 +3155,16 @@ TimeUtil Class
 
   })(RangeGrid);
 
-  module.exports = {
-    ChartBuilder: ChartBuilder
-  };
+  if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
+    module.exports = ChartBuilder;
+  } else {
+    if (typeof define === "function" && define.amd) {
+      define([], function() {
+        return ChartBuilder;
+      });
+    } else {
+      window.ChartBuilder = ChartBuilder;
+    }
+  }
 
 }).call(this);
