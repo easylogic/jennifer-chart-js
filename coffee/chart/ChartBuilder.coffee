@@ -439,19 +439,11 @@ class ChartBuilder extends Draw
     @caculate()
 
     @drawBefore()
-    console.log('start9')
     @drawDefs()
-    console.log('start0')
-
     @drawGrid()
-    console.log('start1')
-    ###
+
     @drawBrush()
-    console.log('start2')
     @drawWidget()
-    console.log('start3')
 
-
-    ###
     @svg.css background: @theme("backgroundColor")
     @svg.render()
