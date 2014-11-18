@@ -91,12 +91,13 @@ module.exports = function(grunt) {
            "coffee/chart/brush/gauge.coffee", // extends donut
            "coffee/chart/brush/fullgauge.coffee", // extends donut
            "coffee/chart/brush/stackgauge.coffee", // extends donut
+             */
 
            // chart.widget
-           "coffee/chart/widget/core.coffee",
-           "coffee/chart/widget/title.coffee",
-           "coffee/chart/widget/legend.coffee"
-           */
+           "coffee/chart/widget/Widget.coffee",
+           "coffee/chart/widget/TitleWidget.coffee",
+           "coffee/chart/widget/LegendWidget.coffee",
+
             "coffee/Module.coffee"
         ],
         dest: "coffee/jennifer-chart.coffee"

@@ -45,7 +45,8 @@ class DomUtil
   collapseAttr : () ->
     style = @collapseStyle()
 
-    @put "style", style
+    if style
+      @put "style", style
 
     str = for key, value of @attrs
       "#{key}=\"#{value}\""
@@ -109,8 +110,8 @@ class DomUtil
     @
 
   addClass : (s) ->
-    list = @attrs['class'].split(" ")
-    listEx = s.split("")
+    list = (@attrs['class'] || "").split(" ")
+    listEx = s.split(" ")
     result = {}
 
     for str in list

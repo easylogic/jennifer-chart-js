@@ -12,12 +12,6 @@ class Grid extends Draw
       x = @chart.data(x, @options.key)
     @scale.get(x)
 
-  drawCustom : () ->
-  drawTop : () ->
-  drawRight : () ->
-  drawBottom : () ->
-  drawLeft : () ->
-
   axisLine : (attr) ->
     el("line", extend({
       x1 : 0,

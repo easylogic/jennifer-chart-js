@@ -79,7 +79,8 @@ class DomUtil
   collapseAttr : () ->
     style = @collapseStyle()
 
-    @put "style", style
+    if style
+      @put "style", style
 
     str = for key, value of @attrs
       "#{key}=\"#{value}\""
@@ -143,8 +144,8 @@ class DomUtil
     @
 
   addClass : (s) ->
-    list = @attrs['class'].split(" ")
-    listEx = s.split("")
+    list = (@attrs['class'] || "").split(" ")
+    listEx = s.split(" ")
     result = {}
 
     for str in list
@@ -197,13 +198,15 @@ class Transform extends DomUtil
   render: () ->
     list = ("#{key}(#{value})" for key, value of @orders)
 
-    @put "transform", list.join(" ")
+    if list.length
+      @put "transform", list.join(" ")
 
     super()
 class Path extends Transform
   paths : [],
   constructor : (attr) ->
     super "path", attr
+    @paths = []
 
   moveTo: (x, y) ->
     @paths.push "m#{x},#{y}"
@@ -293,6 +296,7 @@ class Polygon extends Transform
   points : [],
   constructor : (attr) ->
     super "polygon", attr
+    @points = []
 
   point : (x, y) ->
     @points.push [x,y].join(",")
@@ -305,6 +309,7 @@ class Polyline extends Transform
   points : [],
   constructor : (attr) ->
     super "polyline", attr
+    @points = []
 
   point : (x, y) ->
     @points.push [x,y].join(",")
@@ -752,7 +757,7 @@ class ChartBuilder extends Draw
   widgets = {}
   brushes = {}
 
-  deepClone = (obj = {}) ->
+  deepClone = (obj) ->
     value = ''
 
     if obj instanceof Array
@@ -790,10 +795,8 @@ class ChartBuilder extends Draw
     @root = @svg.g().translate(0.5, 0.5)
 
   initWidget : () ->
-    ###
-    addWidget "title", TitleWidget
-    addWidget "legend", LegendWidget
-    ###
+    @addWidget "title", TitleWidget
+    @addWidget "legend", LegendWidget
 
   initBrush : () ->
     ###
@@ -853,11 +856,11 @@ class ChartBuilder extends Draw
         _padding = extend({left : 50, right : 50, top : 50, bottom : 50}, _options.padding)
 
   drawBefore : () ->
-    series = deepClone _options.series
-    grid = deepClone _options.grid
-    brush = deepClone _options.brush
-    widget = deepClone _options.widget
-    data = deepClone _options.data
+    series = deepClone (_options.series || {})
+    grid = deepClone (_options.grid || {})
+    brush = deepClone (_options.brush || [])
+    widget = deepClone (_options.widget || [])
+    data = deepClone (_options.data || [])
     series_list = []
 
     for row in data
@@ -883,6 +886,8 @@ class ChartBuilder extends Draw
 
     series_list = (key for key, value of series)
 
+    console.log(brush)
+
     _brush = @createBrushData(brush, series_list)
     _widget = @createBrushData(widget, series_list)
 
@@ -897,18 +902,19 @@ class ChartBuilder extends Draw
     if draws
       if typeof draws == 'string'
         result = [ type: draws ]
-      else if typeof draws == 'object' and !draws.length
+      else if typeof draws is 'object' and  typeof  draws.length is "undefined"
         result = [draws];
       else
         result = draws
 
-      for b in result
-        if !b.target
-          b.target = series_list;
-        else if typeof b.target == 'string'
-          b.target = [b.target]
+      if result.length > 0
+        for b in result
+          if !b.target
+            b.target = series_list;
+          else if typeof b.target is 'string'
+            b.target = [b.target]
 
-    result;
+    result
 
   caculate : () ->
     _area =
@@ -938,6 +944,8 @@ class ChartBuilder extends Draw
   drawObject : (type) ->
     draws = if type == "brush" then  _brush else  _widget
 
+    console.log _brush
+
     if draws
       i = 0
       len = draws.length
@@ -952,9 +960,9 @@ class ChartBuilder extends Draw
         obj.index = i
 
         result = new Obj(@, obj).render()
-        result.root.addClass type + " " + obj.type
+        #result.addClass type + " " + obj.type
 
-        @root.append result.root
+        @root.append result
 
         i++
 
@@ -1164,20 +1172,12 @@ class ChartBuilder extends Draw
     @caculate()
 
     @drawBefore()
-    console.log('start9')
     @drawDefs()
-    console.log('start0')
-
     @drawGrid()
-    console.log('start1')
-    ###
+
     @drawBrush()
-    console.log('start2')
     @drawWidget()
-    console.log('start3')
 
-
-    ###
     @svg.css background: @theme("backgroundColor")
     @svg.render()
 
@@ -1552,12 +1552,6 @@ class Grid extends Draw
     if @options.key
       x = @chart.data(x, @options.key)
     @scale.get(x)
-
-  drawCustom : () ->
-  drawTop : () ->
-  drawRight : () ->
-  drawBottom : () ->
-  drawLeft : () ->
 
   axisLine : (attr) ->
     el("line", extend({
@@ -2381,6 +2375,198 @@ class RuleGrid extends RangeGrid
     center = @options.center || false
 
 
+class Widget extends Draw
+  constructor: (@chart, @options) ->
+    @init()
+
+  init: () ->
+  drawBefore : () -> 
+  draw : () -> null
+
+class TitleWidget extends Widget
+
+  position = "";
+  align = "";
+  dx = 0;
+  dy = 0;
+  x = 0;
+  y = 0;
+  anchor = "";
+
+
+  constructor : (@chart, @options) ->
+    super @chart, @options
+
+  init : () ->
+    position = @options.position || "top";
+    align = @options.align || "center";
+    dx = @options.dx || 0;
+    dy = @options.dy || 0;
+
+  drawBefore : () ->
+    if position is "bottom"
+      y = @chart.y2() + @chart.padding("bottom") - 20;
+    else if position is "top"
+      y = 20
+    else
+      y = @chart.y() + @chart.height() / 2;
+
+    if align is "center"
+      x = @chart.x() + @chart.width() / 2
+      anchor = "middle"
+    else if align is "start"
+      x = @chart.start()
+      anchor = "start"
+    else
+      x = @chart.x2();
+      anchor = "end";
+  draw : (root) ->
+    if @options.text is ""
+      return
+
+    unit = parseInt(@chart.theme("titleFontSize"));
+    textWidth = @options.text.length * unit;
+    textHeight = unit
+
+    half_text_width = textWidth/2;
+    half_text_height = textHeight/2;
+
+    text = @chart.text({
+      x : x + dx,
+      y : y + dy,
+      "text-anchor" : anchor,
+      "font-family" : @chart.theme("fontFamily"),
+      "font-size" : @chart.theme("titleFontSize"),
+      "fill" : @chart.theme("titleFontColor")
+    }, @options.text)
+
+    if position is "center"
+      if align is "start"
+        text.rotate(-90, x + dx + half_text_width, y + dy + half_text_height)
+      else if align is "end"
+        text.rotate(90, x + dx - half_text_width, y + dy + half_text_height)
+
+    text
+class LegendWidget extends Widget
+
+  brush = [ 0 ]
+  position = ""
+  align = ""
+  key = null
+
+  constructor: (@chart, @options) ->
+    super @chart, @options
+
+  init: () ->
+    brush = @options.brush || [0]
+    position = @options.position || "bottom"
+    align = @options.align || "center"
+    key = @options.key
+
+  drawBefore : () ->
+
+  getLegendIcon : (brush) ->
+    arr = []
+    data = brush.target
+
+    if key
+      data = @chart.data()
+
+    count = data.length
+
+    arr = for i in [0...count]
+      if key
+        text = @chart.series(key).text || data[i][key]
+      else
+        target = brush.target[i]
+        text = @chart.series(target).text || target
+
+      unit = parseInt(@chart.theme("legendFontSize"))
+      textWidth = text.length * unit
+      textHeight = unit
+
+      width = Math.min(textWidth, textHeight)
+      height = width
+
+      group = el("g", "class" : "legend icon")
+
+      group.rect({
+        x: 0,
+        y : 0,
+        width: width,
+        height : height,
+        fill : @chart.color(i, brush.colors)
+      })
+
+      group.append(@chart.text({
+        x : width + 4,
+        y : 11,
+        "font-family" : @chart.theme("fontFamily"),
+        "font-size" : @chart.theme("legendFontSize"),
+        "fill" : @chart.theme("legendFontColor"),
+        "text-anchor" : "start"
+      }, text))
+
+
+
+      {icon : group, width : width + 4 + textWidth + 10, height : height + 4}
+
+  draw : () ->
+    group = el("g", "class" : "widget legend")
+
+    x = 0
+    y = 0
+    total_width = 0
+    total_height = 0
+    max_width = 0
+    max_height = 0
+
+    for b in brush
+      index = b
+      brushObject = @chart.brush(index)
+
+      arr = @getLegendIcon(brushObject)
+
+      for legend in arr
+        group.append(legend)
+        legend.icon.translate(x, y)
+
+        if position is "bottom" or position is "top"
+          x += legend.width;
+          total_width += legend.width;
+
+          if max_height < legend.height
+            max_height = legend.height
+        else
+          y += legend.height;
+          total_height += legend.height;
+
+          if max_width < legend.width
+            max_width = legend.width
+
+
+
+    if position is "bottom" or position is "top"
+      y = if position is "bottom" then @chart.y2() + @chart.padding("bottom") - max_height  else  @chart.y() - @chart.padding("top")
+
+      if align is "start"
+        x = @chart.x()
+      else if align is "center"
+        x = @chart.x() + (@chart.width() / 2- total_width / 2)
+      else if align is "end"
+        x = @chart.x2() - total_width
+    else
+      x = if position  is "left" then  @chart.x() - @chart.padding("left") else  @chart.x2() + @chart.padding("right") - max_width
+
+      if align  is "start"
+        y = @chart.y()
+      else if align is "center"
+        y = @chart.y() + (@chart.height() / 2 - total_height / 2)
+      else if align is "end"
+        y = @chart.y2() - total_height
+
+    group.translate(x, y);
+    group
 if typeof module isnt "undefined" and typeof module.exports isnt "undefined"
   module.exports = ChartBuilder
 else

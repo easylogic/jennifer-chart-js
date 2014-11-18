@@ -27,7 +27,7 @@ class ChartBuilder extends Draw
   widgets = {}
   brushes = {}
 
-  deepClone = (obj = {}) ->
+  deepClone = (obj) ->
     value = ''
 
     if obj instanceof Array
@@ -65,10 +65,8 @@ class ChartBuilder extends Draw
     @root = @svg.g().translate(0.5, 0.5)
 
   initWidget : () ->
-    ###
-    addWidget "title", TitleWidget
-    addWidget "legend", LegendWidget
-    ###
+    @addWidget "title", TitleWidget
+    @addWidget "legend", LegendWidget
 
   initBrush : () ->
     ###
@@ -128,11 +126,11 @@ class ChartBuilder extends Draw
         _padding = extend({left : 50, right : 50, top : 50, bottom : 50}, _options.padding)
 
   drawBefore : () ->
-    series = deepClone _options.series
-    grid = deepClone _options.grid
-    brush = deepClone _options.brush
-    widget = deepClone _options.widget
-    data = deepClone _options.data
+    series = deepClone (_options.series || {})
+    grid = deepClone (_options.grid || {})
+    brush = deepClone (_options.brush || [])
+    widget = deepClone (_options.widget || [])
+    data = deepClone (_options.data || [])
     series_list = []
 
     for row in data
@@ -158,6 +156,8 @@ class ChartBuilder extends Draw
 
     series_list = (key for key, value of series)
 
+    console.log(brush)
+
     _brush = @createBrushData(brush, series_list)
     _widget = @createBrushData(widget, series_list)
 
@@ -172,18 +172,19 @@ class ChartBuilder extends Draw
     if draws
       if typeof draws == 'string'
         result = [ type: draws ]
-      else if typeof draws == 'object' and !draws.length
+      else if typeof draws is 'object' and  typeof  draws.length is "undefined"
         result = [draws];
       else
         result = draws
 
-      for b in result
-        if !b.target
-          b.target = series_list;
-        else if typeof b.target == 'string'
-          b.target = [b.target]
+      if result.length > 0
+        for b in result
+          if !b.target
+            b.target = series_list;
+          else if typeof b.target is 'string'
+            b.target = [b.target]
 
-    result;
+    result
 
   caculate : () ->
     _area =
@@ -213,6 +214,8 @@ class ChartBuilder extends Draw
   drawObject : (type) ->
     draws = if type == "brush" then  _brush else  _widget
 
+    console.log _brush
+
     if draws
       i = 0
       len = draws.length
@@ -227,9 +230,9 @@ class ChartBuilder extends Draw
         obj.index = i
 
         result = new Obj(@, obj).render()
-        result.root.addClass type + " " + obj.type
+        #result.addClass type + " " + obj.type
 
-        @root.append result.root
+        @root.append result
 
         i++
 

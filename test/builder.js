@@ -24,7 +24,12 @@ var svg = new ChartBuilder({
             step : 10,
             dist : 50
         }]
-    }/*,
+    },
+    widget : [
+        {type : "title" , text : "Sample Title"}
+    ]
+
+    /*,
     brush : {
         type : "bar",
         target : [ "sales", "profit"]

@@ -12,6 +12,7 @@ class Transform extends DomUtil
   render: () ->
     list = ("#{key}(#{value})" for key, value of @orders)
 
-    @put "transform", list.join(" ")
+    if list.length
+      @put "transform", list.join(" ")
 
     super()

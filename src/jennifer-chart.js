@@ -6,7 +6,7 @@ TimeUtil Class
  */
 
 (function() {
-  var BlockGrid, ChartBuilder, ColorUtil, DarkTheme, DateGrid, DomUtil, Draw, GradientTheme, Grid, JenniferTheme, LinearScale, MathUtil, OrdinalScale, PastelTheme, Path, Polygon, Polyline, RangeGrid, RuleGrid, Scale, Svg, TimeUtil, Transform, el, extend,
+  var BlockGrid, ChartBuilder, ColorUtil, DarkTheme, DateGrid, DomUtil, Draw, GradientTheme, Grid, JenniferTheme, LegendWidget, LinearScale, MathUtil, OrdinalScale, PastelTheme, Path, Polygon, Polyline, RangeGrid, RuleGrid, Scale, Svg, TimeUtil, TitleWidget, Transform, Widget, el, extend,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -133,7 +133,9 @@ TimeUtil Class
     DomUtil.prototype.collapseAttr = function() {
       var key, str, style, value;
       style = this.collapseStyle();
-      this.put("style", style);
+      if (style) {
+        this.put("style", style);
+      }
       str = (function() {
         var _ref, _results;
         _ref = this.attrs;
@@ -303,8 +305,8 @@ TimeUtil Class
 
     DomUtil.prototype.addClass = function(s) {
       var key, list, listEx, result, ret, str, value, _i, _j, _len, _len1;
-      list = this.attrs['class'].split(" ");
-      listEx = s.split("");
+      list = (this.attrs['class'] || "").split(" ");
+      listEx = s.split(" ");
       result = {};
       for (_i = 0, _len = list.length; _i < _len; _i++) {
         str = list[_i];
@@ -405,7 +407,9 @@ TimeUtil Class
         }
         return _results;
       }).call(this);
-      this.put("transform", list.join(" "));
+      if (list.length) {
+        this.put("transform", list.join(" "));
+      }
       return Transform.__super__.render.call(this);
     };
 
@@ -420,6 +424,7 @@ TimeUtil Class
 
     function Path(attr) {
       Path.__super__.constructor.call(this, "path", attr);
+      this.paths = [];
     }
 
     Path.prototype.moveTo = function(x, y) {
@@ -577,6 +582,7 @@ TimeUtil Class
 
     function Polygon(attr) {
       Polygon.__super__.constructor.call(this, "polygon", attr);
+      this.points = [];
     }
 
     Polygon.prototype.point = function(x, y) {
@@ -600,6 +606,7 @@ TimeUtil Class
 
     function Polyline(attr) {
       Polyline.__super__.constructor.call(this, "polyline", attr);
+      this.points = [];
     }
 
     Polyline.prototype.point = function(x, y) {
@@ -1301,9 +1308,6 @@ TimeUtil Class
 
     deepClone = function(obj) {
       var key, o, val, value;
-      if (obj == null) {
-        obj = {};
-      }
       value = '';
       if (obj instanceof Array) {
         value = (function() {
@@ -1352,11 +1356,8 @@ TimeUtil Class
     };
 
     ChartBuilder.prototype.initWidget = function() {
-
-      /*
-      addWidget "title", TitleWidget
-      addWidget "legend", LegendWidget
-       */
+      this.addWidget("title", TitleWidget);
+      return this.addWidget("legend", LegendWidget);
     };
 
     ChartBuilder.prototype.initBrush = function() {
@@ -1449,11 +1450,11 @@ TimeUtil Class
 
     ChartBuilder.prototype.drawBefore = function() {
       var brush, data, grid, key, obj, row, series, series_list, value, widget, _i, _len;
-      series = deepClone(_options.series);
-      grid = deepClone(_options.grid);
-      brush = deepClone(_options.brush);
-      widget = deepClone(_options.widget);
-      data = deepClone(_options.data);
+      series = deepClone(_options.series || {});
+      grid = deepClone(_options.grid || {});
+      brush = deepClone(_options.brush || []);
+      widget = deepClone(_options.widget || []);
+      data = deepClone(_options.data || []);
       series_list = [];
       for (_i = 0, _len = data.length; _i < _len; _i++) {
         row = data[_i];
@@ -1486,6 +1487,7 @@ TimeUtil Class
         }
         return _results;
       })();
+      console.log(brush);
       _brush = this.createBrushData(brush, series_list);
       _widget = this.createBrushData(widget, series_list);
       _series = series;
@@ -1504,17 +1506,19 @@ TimeUtil Class
               type: draws
             }
           ];
-        } else if (typeof draws === 'object' && !draws.length) {
+        } else if (typeof draws === 'object' && typeof draws.length === "undefined") {
           result = [draws];
         } else {
           result = draws;
         }
-        for (_i = 0, _len = result.length; _i < _len; _i++) {
-          b = result[_i];
-          if (!b.target) {
-            b.target = series_list;
-          } else if (typeof b.target === 'string') {
-            b.target = [b.target];
+        if (result.length > 0) {
+          for (_i = 0, _len = result.length; _i < _len; _i++) {
+            b = result[_i];
+            if (!b.target) {
+              b.target = series_list;
+            } else if (typeof b.target === 'string') {
+              b.target = [b.target];
+            }
           }
         }
       }
@@ -1551,6 +1555,7 @@ TimeUtil Class
     ChartBuilder.prototype.drawObject = function(type) {
       var Obj, drawObj, draws, i, len, obj, result, _results;
       draws = type === "brush" ? _brush : _widget;
+      console.log(_brush);
       if (draws) {
         i = 0;
         len = draws.length;
@@ -1562,8 +1567,7 @@ TimeUtil Class
           this.setGridAxis(obj, drawObj);
           obj.index = i;
           result = new Obj(this, obj).render();
-          result.root.addClass(type + " " + obj.type);
-          this.root.append(result.root);
+          this.root.append(result);
           _results.push(i++);
         }
         return _results;
@@ -1850,18 +1854,10 @@ TimeUtil Class
     ChartBuilder.prototype.render = function() {
       this.caculate();
       this.drawBefore();
-      console.log('start9');
       this.drawDefs();
-      console.log('start0');
       this.drawGrid();
-      console.log('start1');
-
-      /*
-      @drawBrush()
-      console.log('start2')
-      @drawWidget()
-      console.log('start3')
-       */
+      this.drawBrush();
+      this.drawWidget();
       this.svg.css({
         background: this.theme("backgroundColor")
       });
@@ -2160,16 +2156,6 @@ TimeUtil Class
       }
       return this.scale.get(x);
     };
-
-    Grid.prototype.drawCustom = function() {};
-
-    Grid.prototype.drawTop = function() {};
-
-    Grid.prototype.drawRight = function() {};
-
-    Grid.prototype.drawBottom = function() {};
-
-    Grid.prototype.drawLeft = function() {};
 
     Grid.prototype.axisLine = function(attr) {
       return el("line", extend({
@@ -3154,6 +3140,252 @@ TimeUtil Class
     return RuleGrid;
 
   })(RangeGrid);
+
+  Widget = (function(_super) {
+    __extends(Widget, _super);
+
+    function Widget(chart, options) {
+      this.chart = chart;
+      this.options = options;
+      this.init();
+    }
+
+    Widget.prototype.init = function() {};
+
+    Widget.prototype.drawBefore = function() {};
+
+    Widget.prototype.draw = function() {
+      return null;
+    };
+
+    return Widget;
+
+  })(Draw);
+
+  TitleWidget = (function(_super) {
+    var align, anchor, dx, dy, position, x, y;
+
+    __extends(TitleWidget, _super);
+
+    position = "";
+
+    align = "";
+
+    dx = 0;
+
+    dy = 0;
+
+    x = 0;
+
+    y = 0;
+
+    anchor = "";
+
+    function TitleWidget(chart, options) {
+      this.chart = chart;
+      this.options = options;
+      TitleWidget.__super__.constructor.call(this, this.chart, this.options);
+    }
+
+    TitleWidget.prototype.init = function() {
+      position = this.options.position || "top";
+      align = this.options.align || "center";
+      dx = this.options.dx || 0;
+      return dy = this.options.dy || 0;
+    };
+
+    TitleWidget.prototype.drawBefore = function() {
+      if (position === "bottom") {
+        y = this.chart.y2() + this.chart.padding("bottom") - 20;
+      } else if (position === "top") {
+        y = 20;
+      } else {
+        y = this.chart.y() + this.chart.height() / 2;
+      }
+      if (align === "center") {
+        x = this.chart.x() + this.chart.width() / 2;
+        return anchor = "middle";
+      } else if (align === "start") {
+        x = this.chart.start();
+        return anchor = "start";
+      } else {
+        x = this.chart.x2();
+        return anchor = "end";
+      }
+    };
+
+    TitleWidget.prototype.draw = function(root) {
+      var half_text_height, half_text_width, text, textHeight, textWidth, unit;
+      if (this.options.text === "") {
+        return;
+      }
+      unit = parseInt(this.chart.theme("titleFontSize"));
+      textWidth = this.options.text.length * unit;
+      textHeight = unit;
+      half_text_width = textWidth / 2;
+      half_text_height = textHeight / 2;
+      text = this.chart.text({
+        x: x + dx,
+        y: y + dy,
+        "text-anchor": anchor,
+        "font-family": this.chart.theme("fontFamily"),
+        "font-size": this.chart.theme("titleFontSize"),
+        "fill": this.chart.theme("titleFontColor")
+      }, this.options.text);
+      if (position === "center") {
+        if (align === "start") {
+          text.rotate(-90, x + dx + half_text_width, y + dy + half_text_height);
+        } else if (align === "end") {
+          text.rotate(90, x + dx - half_text_width, y + dy + half_text_height);
+        }
+      }
+      return text;
+    };
+
+    return TitleWidget;
+
+  })(Widget);
+
+  LegendWidget = (function(_super) {
+    var align, brush, key, position;
+
+    __extends(LegendWidget, _super);
+
+    brush = [0];
+
+    position = "";
+
+    align = "";
+
+    key = null;
+
+    function LegendWidget(chart, options) {
+      this.chart = chart;
+      this.options = options;
+      LegendWidget.__super__.constructor.call(this, this.chart, this.options);
+    }
+
+    LegendWidget.prototype.init = function() {
+      brush = this.options.brush || [0];
+      position = this.options.position || "bottom";
+      align = this.options.align || "center";
+      return key = this.options.key;
+    };
+
+    LegendWidget.prototype.drawBefore = function() {};
+
+    LegendWidget.prototype.getLegendIcon = function(brush) {
+      var arr, count, data, group, height, i, target, text, textHeight, textWidth, unit, width;
+      arr = [];
+      data = brush.target;
+      if (key) {
+        data = this.chart.data();
+      }
+      count = data.length;
+      return arr = (function() {
+        var _i, _results;
+        _results = [];
+        for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+          if (key) {
+            text = this.chart.series(key).text || data[i][key];
+          } else {
+            target = brush.target[i];
+            text = this.chart.series(target).text || target;
+          }
+          unit = parseInt(this.chart.theme("legendFontSize"));
+          textWidth = text.length * unit;
+          textHeight = unit;
+          width = Math.min(textWidth, textHeight);
+          height = width;
+          group = el("g", {
+            "class": "legend icon"
+          });
+          group.rect({
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+            fill: this.chart.color(i, brush.colors)
+          });
+          group.append(this.chart.text({
+            x: width + 4,
+            y: 11,
+            "font-family": this.chart.theme("fontFamily"),
+            "font-size": this.chart.theme("legendFontSize"),
+            "fill": this.chart.theme("legendFontColor"),
+            "text-anchor": "start"
+          }, text));
+          _results.push({
+            icon: group,
+            width: width + 4 + textWidth + 10,
+            height: height + 4
+          });
+        }
+        return _results;
+      }).call(this);
+    };
+
+    LegendWidget.prototype.draw = function() {
+      var arr, b, brushObject, group, index, legend, max_height, max_width, total_height, total_width, x, y, _i, _j, _len, _len1;
+      group = el("g", {
+        "class": "widget legend"
+      });
+      x = 0;
+      y = 0;
+      total_width = 0;
+      total_height = 0;
+      max_width = 0;
+      max_height = 0;
+      for (_i = 0, _len = brush.length; _i < _len; _i++) {
+        b = brush[_i];
+        index = b;
+        brushObject = this.chart.brush(index);
+        arr = this.getLegendIcon(brushObject);
+        for (_j = 0, _len1 = arr.length; _j < _len1; _j++) {
+          legend = arr[_j];
+          group.append(legend);
+          legend.icon.translate(x, y);
+          if (position === "bottom" || position === "top") {
+            x += legend.width;
+            total_width += legend.width;
+            if (max_height < legend.height) {
+              max_height = legend.height;
+            }
+          } else {
+            y += legend.height;
+            total_height += legend.height;
+            if (max_width < legend.width) {
+              max_width = legend.width;
+            }
+          }
+        }
+      }
+      if (position === "bottom" || position === "top") {
+        y = position === "bottom" ? this.chart.y2() + this.chart.padding("bottom") - max_height : this.chart.y() - this.chart.padding("top");
+        if (align === "start") {
+          x = this.chart.x();
+        } else if (align === "center") {
+          x = this.chart.x() + (this.chart.width() / 2 - total_width / 2);
+        } else if (align === "end") {
+          x = this.chart.x2() - total_width;
+        }
+      } else {
+        x = position === "left" ? this.chart.x() - this.chart.padding("left") : this.chart.x2() + this.chart.padding("right") - max_width;
+        if (align === "start") {
+          y = this.chart.y();
+        } else if (align === "center") {
+          y = this.chart.y() + (this.chart.height() / 2 - total_height / 2);
+        } else if (align === "end") {
+          y = this.chart.y2() - total_height;
+        }
+      }
+      group.translate(x, y);
+      return group;
+    };
+
+    return LegendWidget;
+
+  })(Widget);
 
   if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
     module.exports = ChartBuilder;
