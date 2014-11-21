@@ -37,6 +37,9 @@ DarkTheme =
   gridActiveBorderWidth: 1,
 
   # brush styles
+  barBorderColor : "none",
+  barBorderWidth : 0,
+  barBorderOpacity : 0,
   gaugeBackgroundColor : "#3e3e3e",
   gaugeArrowColor : "#a6a6a6",
   gaugeFontColor : "#c5c5c5",

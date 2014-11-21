@@ -39,6 +39,9 @@ JenniferTheme =
   gridActiveBorderWidth: 1,
 
   # brush styles
+  barBorderColor : "none",
+  barBorderWidth : 0,
+  barBorderOpacity : 0,
   gaugeBackgroundColor : "#ececec",
   gaugeArrowColor : "#666666",
   gaugeFontColor : "#666666",

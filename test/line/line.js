@@ -1,5 +1,5 @@
 fs = require('fs');
-ChartBuilder = require("../src/jennifer-chart");
+ChartBuilder = require("../../src/jennifer-chart");
 
 var svg = new ChartBuilder({
     theme : "dark",
@@ -30,5 +30,5 @@ var svg = new ChartBuilder({
     }
 }).render()
 
-fs.writeFileSync("./builder.svg", svg);
+fs.writeFileSync("./line.svg", svg);
 

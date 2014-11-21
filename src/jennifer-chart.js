@@ -920,23 +920,9 @@ TimeUtil Class
   })();
 
   Scale = (function() {
-    var _clamp, _domain, _isRound, _key, _range, _rangeBand;
-
-    _rangeBand = 0;
-
-    _isRound = false;
-
-    _clamp = false;
-
-    _domain = [];
-
-    _range = [];
-
-    _key = "";
-
-    function Scale(domain, range) {
-      _domain = domain;
-      _range = range;
+    function Scale(_domain, _range) {
+      this._domain = _domain;
+      this._range = _range;
       this.init();
     }
 
@@ -944,9 +930,9 @@ TimeUtil Class
 
     Scale.prototype.clamp = function(clamp) {
       if (arguments.length === 0) {
-        return _clamp;
+        return this._clamp;
       } else {
-        _clamp = clamp;
+        this._clamp = clamp;
         return this;
       }
     };
@@ -956,18 +942,18 @@ TimeUtil Class
     };
 
     Scale.prototype.max = function() {
-      return Math.max(_domain[0], _domain[_domain.length - 1]);
+      return Math.max.apply(Math, this._domain);
     };
 
     Scale.prototype.min = function() {
-      return Math.min(_domain[0], _domain[_domain.length - 1]);
+      return Math.min.apply(Math, this._domain);
     };
 
     Scale.prototype.rangeBand = function(band) {
       if (arguments.length === 0) {
-        return _rangeBand;
+        return this._rangeBand;
       } else {
-        _rangeBand = band;
+        this._rangeBand = band;
         return this;
       }
     };
@@ -983,9 +969,9 @@ TimeUtil Class
     Scale.prototype.domain = function(values) {
       var value;
       if (arguments.length === 0) {
-        return _domain;
+        return this._domain;
       } else {
-        _domain = (function() {
+        this._domain = (function() {
           var _i, _len, _results;
           _results = [];
           for (_i = 0, _len = values.length; _i < _len; _i++) {
@@ -1001,9 +987,9 @@ TimeUtil Class
     Scale.prototype.range = function(values) {
       var value;
       if (arguments.length === 0) {
-        return _range;
+        return this._range;
       } else {
-        _range = (function() {
+        this._range = (function() {
           var _i, _len, _results;
           _results = [];
           for (_i = 0, _len = values.length; _i < _len; _i++) {
@@ -1017,11 +1003,11 @@ TimeUtil Class
     };
 
     Scale.prototype.round = function() {
-      return _isRound;
+      return this._isRound;
     };
 
     Scale.prototype.rangeRound = function(values) {
-      _isRound = true;
+      this._isRound = true;
       return this.range(values);
     };
 
@@ -1085,10 +1071,10 @@ TimeUtil Class
             if (this.clamp()) {
               return max;
             }
-            last = _domain[_domain.length(-1)];
-            last2 = _domain[_domain.length(-2)];
-            rlast = _range[_range.length(-1)];
-            rlast2 = _range[_range.length(-2)];
+            last = _domain[_domain.length - 1];
+            last2 = _domain[_domain.length - 2];
+            rlast = _range[_range.length - 1];
+            rlast2 = _range[_range.length - 2];
             distLast = Math.abs(last - last2);
             distRLast = Math.abs(rlast - rlast2);
             return rlast + Math.abs(x - max) * distRLast / distLast;
@@ -1160,27 +1146,29 @@ TimeUtil Class
     }
 
     OrdinalScale.prototype.get = function(x) {
-      var i, index, len, _domain;
+      var i, index, len, _domain, _i, _range;
       _domain = this.domain();
       index = -1;
       i = 0;
       len = _domain.length;
-      while (i < len) {
+      for (i = _i = 0; 0 <= len ? _i < len : _i > len; i = 0 <= len ? ++_i : --_i) {
         if (_domain[i] === x) {
           index = i;
           break;
         }
         i++;
       }
+      _range = this.range();
       if (index > -1) {
         return _range[index];
       } else {
-        if (_range[x]) {
+        if (typeof _range[x] !== 'undefined') {
           _domain[x] = x;
           return _range[x];
+        } else {
+          return null;
         }
       }
-      return null;
     };
 
     OrdinalScale.prototype.rangePoints = function(interval, padding) {
@@ -1356,29 +1344,32 @@ TimeUtil Class
     };
 
     ChartBuilder.prototype.initWidget = function() {
-      this.addWidget("title", TitleWidget);
-      return this.addWidget("legend", LegendWidget);
+
+      /*
+      @addWidget "title", TitleWidget
+      @addWidget "legend", LegendWidget
+       */
     };
 
     ChartBuilder.prototype.initBrush = function() {
+      this.addBrush("bar", BarBrush);
+      this.addBrush("bubble", BubbleBrush);
+      this.addBrush("candlestick", CandleStickBrush);
+      this.addBrush("column", ColumnBrush);
+      this.addBrush("donut", DonutBrush);
+      this.addBrush("equalizer", EqualizerBrush);
+      this.addBrush("line", LineBrush);
+      this.addBrush("ohlc", OhlcBrush);
+      this.addBrush("path", PathBrush);
+      return this.addBrush("fullstack", FullStackBrush);
 
       /*
       @addBrush "area", AreaBrush
-      @addBrush "bar", BarBrush
       @addBrush "bargauge", BarGaugeBrush
-      @addBrush "bubble", BubbleBrush
-      @addBrush "candlestick", CandleStickBrush
       @addBrush "circlegauge", CircleGaugeBrush
-      @addBrush "column", ColumnBrush
-      @addBrush "donut", DonutBrush
-      @addBrush "equalizer", EqualizerBrush
       @addBrush "fillgauge", FillGaugeBrush
       @addBrush "fullgauge", FullGaugeBrush
-      @addBrush "fullstack", FullStackBrush
       @addBrush "gauge", GagueBrush
-      @addBrush "line", LineBrush
-      @addBrush "ohlc", OhlcBrush
-      @addBrush "path", PathBrush
       @addBrush "pie",  PieBrush
       @addBrush "scatter", ScatterBrush
       @addBrush "scatterpath", ScatterPathBrush
@@ -1555,7 +1546,6 @@ TimeUtil Class
     ChartBuilder.prototype.drawObject = function(type) {
       var Obj, drawObj, draws, i, len, obj, result, _results;
       draws = type === "brush" ? _brush : _widget;
-      console.log(_brush);
       if (draws) {
         i = 0;
         len = draws.length;
@@ -1567,6 +1557,7 @@ TimeUtil Class
           this.setGridAxis(obj, drawObj);
           obj.index = i;
           result = new Obj(this, obj).render();
+          result.addClass(type + " " + obj.type);
           this.root.append(result);
           _results.push(i++);
         }
@@ -1588,7 +1579,7 @@ TimeUtil Class
       }
       if (_scales.y || _scales.y1) {
         if (!_scales.y && _scales.y1) {
-          scales.y = _scales.y1;
+          _scales.y = _scales.y1;
         }
         if (!draw.y) {
           draw.y = typeof drawObj.y1 !== 'undefined' ? _scales.y1[drawObj.y1 || 0] : _scales.y[drawObj.y || 0];
@@ -1647,7 +1638,6 @@ TimeUtil Class
               newGrid = new Grid(orient, this, g[keyIndex]);
               root = newGrid.render();
               dist = g[keyIndex].dist || 0;
-              console.log(this.x2());
               if (k === 'y') {
                 root.translate(this.x() - dist, this.y());
               } else if (k === 'y1') {
@@ -1883,6 +1873,9 @@ TimeUtil Class
     gridAxisBorderWidth: 1,
     gridActiveBorderColor: "#ff7800",
     gridActiveBorderWidth: 1,
+    barBorderColor: "none",
+    barBorderWidth: 0,
+    barBorderOpacity: 0,
     gaugeBackgroundColor: "#ececec",
     gaugeArrowColor: "#666666",
     gaugeFontColor: "#666666",
@@ -1949,6 +1942,9 @@ TimeUtil Class
     gridAxisBorderWidth: 1,
     gridActiveBorderColor: "#ff7800",
     gridActiveBorderWidth: 1,
+    barBorderColor: "none",
+    barBorderWidth: 0,
+    barBorderOpacity: 0,
     gaugeBackgroundColor: "#ececec",
     gaugeArrowColor: "#666666",
     gaugeFontColor: "#666666",
@@ -2015,6 +2011,9 @@ TimeUtil Class
     gridAxisBorderWidth: 1,
     gridActiveBorderColor: "#ff7800",
     gridActiveBorderWidth: 1,
+    barBorderColor: "none",
+    barBorderWidth: 0,
+    barBorderOpacity: 0,
     gaugeBackgroundColor: "#3e3e3e",
     gaugeArrowColor: "#a6a6a6",
     gaugeFontColor: "#c5c5c5",
@@ -2081,6 +2080,9 @@ TimeUtil Class
     gridAxisBorderWidth: 1,
     gridActiveBorderColor: "#ff7800",
     gridActiveBorderWidth: 1,
+    barBorderColor: "none",
+    barBorderWidth: 0,
+    barBorderOpacity: 0,
     gaugeBackgroundColor: "#f5f5f5",
     gaugeArrowColor: "gray",
     gaugeFontColor: "#666666",
@@ -2367,7 +2369,7 @@ TimeUtil Class
       while (i < len) {
         d = domain[i];
         if (d !== "") {
-          axis = root.group().translate(0, points[i]);
+          axis = root.group().translate(0, points[i] - half_band);
           axis.append(this.line({
             x2: hasLine ? full_width : -bar
           }));
@@ -3141,7 +3143,9 @@ TimeUtil Class
 
   })(RangeGrid);
 
-  Brush = (function() {
+  Brush = (function(_super) {
+    __extends(Brush, _super);
+
     function Brush(chart, brush) {
       this.chart = chart;
       this.brush = brush;
@@ -3204,7 +3208,7 @@ TimeUtil Class
       len = this.chart.data().length;
       xy = [];
       for (i = _i = 0; 0 <= len ? _i < len : _i > len; i = 0 <= len ? ++_i : --_i) {
-        startX = this.brush.x(i);
+        startX = this.brush.x.get(i);
         data = this.chart.data(i);
         for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
           key = this.brush.target[j];
@@ -3220,7 +3224,7 @@ TimeUtil Class
             };
           }
           xy[j].x.push(startX);
-          xy[j].y.push(this.brush.y(value));
+          xy[j].y.push(this.brush.y.get(value));
           xy[j].value.push(value);
           xy[j].min.push(value === series.min);
           xy[j].max.push(value === series.max);
@@ -3242,14 +3246,14 @@ TimeUtil Class
             valueSum += data[this.brush.target[j - 1]];
           }
         }
-        xy[j].y[i] = this.brush.y(value + valueSum);
+        xy[j].y[i] = this.brush.y.get(value + valueSum);
       }
       return xy;
     };
 
     return Brush;
 
-  })();
+  })(Draw);
 
   BarBrush = (function(_super) {
     var barHeight, borderColor, borderOpacity, borderWidth, count, g, half_height, height, innerPadding, outerPadding, zeroX;
@@ -3290,7 +3294,7 @@ TimeUtil Class
       g = el("g").translate(this.chart.x(), this.chart.y());
       outerPadding = this.brush.outerPadding || 2;
       innerPadding = this.brush.innerPadding || 1;
-      zeroX = this.brush.x(0);
+      zeroX = this.brush.x.get(0);
       count = this.chart.data().length;
       height = this.brush.y.rangeBand();
       half_height = height - (outerPadding * 2);
@@ -3302,11 +3306,12 @@ TimeUtil Class
 
     BarBrush.prototype.draw = function() {
       var group, i, j, startX, startY, w, _i, _j, _ref;
+      startY = 0;
       for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
         group = g.group();
-        startY = this.brush.y(i) - (half_height / 2);
+        startY = this.brush.y.get(i) + (-half_height / 2);
         for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
-          startX = this.brush.x(this.chart.data(i, this.brush.target[j]));
+          startX = this.brush.x.get(this.chart.data(i, this.brush.target[j]));
           if (startX >= zeroX) {
             group.rect({
               x: zeroX,
@@ -3331,8 +3336,8 @@ TimeUtil Class
               "stroke-opacity": borderOpacity
             });
           }
+          startY += barHeight + innerPadding;
         }
-        startY += barHeight + innerPadding;
       }
       return g;
     };
@@ -3442,7 +3447,7 @@ TimeUtil Class
       var close, high, i, l, low, open, r, startX, targets, y, _i;
       targets = this.getTargets();
       for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
-        startX = this.brush.x(i);
+        startX = this.brush.x.get(i);
         r = null;
         l = null;
         open = targets.open.data[i];
@@ -3450,12 +3455,12 @@ TimeUtil Class
         low = targets.low.data[i];
         high = targets.high.data[i];
         if (open > close) {
-          y = this.brush.y(open);
+          y = this.brush.y.get(open);
           g.line({
             x1: startX,
-            y1: this.brush.y(high),
+            y1: this.brush.y.get(high),
             x2: startX,
-            y2: this.brush.y(low),
+            y2: this.brush.y.get(low),
             stroke: this.chart.theme("candlestickInvertBorderColor"),
             "stroke-width": 1
           });
@@ -3463,18 +3468,18 @@ TimeUtil Class
             x: startX - barPadding,
             y: y,
             width: barWidth,
-            height: Math.abs(this.brush.y(close) - y),
+            height: Math.abs(this.brush.y.get(close) - y),
             fill: this.chart.theme("candlestickInvertBackgroundColor"),
             stroke: this.chart.theme("candlestickInvertBorderColor"),
             "stroke-width": 1
           });
         } else {
-          y = this.brush.y(close);
+          y = this.brush.y.get(close);
           g.line({
             x1: startX,
-            y1: this.brush.y(high),
+            y1: this.brush.y.get(high),
             x2: startX,
-            y2: this.brush.y(low),
+            y2: this.brush.y.get(low),
             stroke: this.chart.theme("candlestickBorderColor"),
             "stroke-width": 1
           });
@@ -3534,7 +3539,7 @@ TimeUtil Class
       var close, color, high, i, low, open, startX, targets, _i;
       targets = this.getTargets();
       for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
-        startX = this.brush.x(i);
+        startX = this.brush.x.get(i);
         open = targets.open.data[i];
         close = targets.close.data[i];
         low = targets.low.data[i];
@@ -3542,25 +3547,25 @@ TimeUtil Class
         color = open > close ? this.chart.theme("ohlcInvertBorderColor") : this.chart.theme("ohlcBorderColor");
         g.line({
           x1: startX,
-          y1: this.brush.y(high),
+          y1: this.brush.y.get(high),
           x2: startX,
-          y2: this.brush.y(low),
+          y2: this.brush.y.get(low),
           stroke: color,
           "stroke-width": 1
         });
         g.line({
           x1: startX,
-          y1: this.brush.y(close),
+          y1: this.brush.y.get(close),
           x2: startX + this.chart.theme("ohlcBorderRadius"),
-          y2: this.brush.y(close),
+          y2: this.brush.y.get(close),
           stroke: color,
           "stroke-width": 1
         });
         g.line({
           x1: startX,
-          y1: this.brush.y(open),
+          y1: this.brush.y.get(open),
           x2: startX + this.chart.theme("ohlcBorderRadius"),
-          y2: this.brush.y(open),
+          y2: this.brush.y.get(open),
           stroke: color,
           "stroke-width": 1
         });
@@ -3611,7 +3616,7 @@ TimeUtil Class
       g = el("g").translate(chart.x(), chart.y());
       outerPadding = this.brush.outerPadding || 2;
       innerPadding = this.brush.innerPadding || 1;
-      zeroY = this.brush.y(0);
+      zeroY = this.brush.y.get(0);
       count = this.chart.data().length;
       width = this.brush.x.rangeBand();
       half_width = width - outerPadding * 2;
@@ -3624,9 +3629,9 @@ TimeUtil Class
     ColumnBrush.prototype.draw = function() {
       var i, j, startX, startY, _i, _j, _ref;
       for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
-        startX = this.brush.x(i) - (half_width / 2);
+        startX = this.brush.x.get(i) - (half_width / 2);
         for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
-          startY = this.brush.y(this.chart.data(i)[this.brush.target[j]]);
+          startY = this.brush.y.get(this.chart.data(i)[this.brush.target[j]]);
           if (startY <= zeroY) {
             g.rect({
               x: startX,
@@ -3786,27 +3791,29 @@ TimeUtil Class
   })(Brush);
 
   EqualizerBrush = (function(_super) {
+    var barWidth, count, g, gap, half_width, innerPadding, outerPadding, unit, width, zeroY;
+
     __extends(EqualizerBrush, _super);
 
-    g;
+    g = null;
 
-    zeroY;
+    zeroY = 0;
 
-    count;
+    count = 0;
 
-    width;
+    width = 0;
 
-    barWidth;
+    barWidth = 0;
 
-    half_width;
+    half_width = 0;
 
-    innerPadding;
+    innerPadding = 0;
 
-    outerPadding;
+    outerPadding = 0;
 
-    unit;
+    unit = 0;
 
-    gap;
+    gap = 0;
 
     function EqualizerBrush(chart, brush) {
       this.chart = chart;
@@ -3815,9 +3822,8 @@ TimeUtil Class
     }
 
     EqualizerBrush.prototype.drawBefore = function() {
-      var barWidth, count, g, gap, half_width, innerPadding, outerPadding, unit, width, zeroY;
       g = el("g").translate(this.chart.x(), this.chart.y());
-      zeroY = this.brush.y(0);
+      zeroY = this.brush.y.get(0);
       count = this.chart.data().length;
       innerPadding = this.brush.innerPadding || 10;
       outerPadding = this.brush.outerPadding || 15;
@@ -3831,10 +3837,10 @@ TimeUtil Class
     EqualizerBrush.prototype.draw = function() {
       var barGroup, eIndex, eY, i, j, padding, startX, startY, unitHeight, _i, _j, _ref;
       for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
-        startX = this.brush.x(i) - half_width;
+        startX = this.brush.x.get(i) - half_width;
         for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
           barGroup = g.group();
-          startY = this.brush.y(this.chart.data(i, this.brush.target[j]));
+          startY = this.brush.y.get(this.chart.data(i, this.brush.target[j]));
           padding = 1.5;
           eY = zeroY;
           eIndex = 0;
@@ -3876,19 +3882,21 @@ TimeUtil Class
   })(Brush);
 
   FullStackBrush = (function(_super) {
+    var barWidth, count, g, outerPadding, width, zeroY;
+
     __extends(FullStackBrush, _super);
 
-    g;
+    g = null;
 
-    zeroY;
+    zeroY = 0;
 
-    count;
+    count = 0;
 
-    width;
+    width = 0;
 
-    barWidth;
+    barWidth = 0;
 
-    outerPadding;
+    outerPadding = 0;
 
     function FullStackBrush(chart, brush) {
       this.chart = chart;
@@ -3899,9 +3907,8 @@ TimeUtil Class
     FullStackBrush.prototype.init = function() {};
 
     FullStackBrush.prototype.drawBefore = function() {
-      var barWidth, count, g, outerPadding, width, zeroY;
       g = el('g').translate(this.chart.x(), this.chart.y());
-      zeroY = this.brush.y(0);
+      zeroY = this.brush.y.get(0);
       count = this.chart.data().length;
       outerPadding = this.brush.outerPadding || 15;
       width = this.brush.x.rangeBand();
@@ -3912,7 +3919,7 @@ TimeUtil Class
       var chart_height, current, height, i, j, list, max, percent, startX, startY, sum, _i, _j, _ref;
       chart_height = this.chart.height();
       for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
-        startX = this.brush.x(i) - barWidth / 2;
+        startX = this.brush.x.get(i) - barWidth / 2;
         sum = 0;
         list = [];
         list = (function() {
@@ -3957,9 +3964,11 @@ TimeUtil Class
   })(Brush);
 
   LineBrush = (function(_super) {
+    var symbol;
+
     __extends(LineBrush, _super);
 
-    symbol;
+    symbol = "normal";
 
     function LineBrush(chart, brush) {
       this.chart = chart;
@@ -3970,7 +3979,6 @@ TimeUtil Class
     LineBrush.prototype.init = function() {};
 
     LineBrush.prototype.drawBefore = function() {
-      var symbol;
       return symbol = this.brush.symbol || "normal";
     };
 
@@ -3978,7 +3986,7 @@ TimeUtil Class
       var i, p, px, py, sx, x, y, _i, _j, _ref, _ref1;
       x = pos.x;
       y = pos.y;
-      p = el("path", {
+      p = new Path({
         stroke: this.chart.color(index, this.brush.colors),
         "stroke-width": this.chart.theme("lineBorderWidth"),
         fill: "transparent"

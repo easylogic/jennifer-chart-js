@@ -1,10 +1,10 @@
 class FullStackBrush extends Brush
-  g
-  zeroY
-  count
-  width
-  barWidth
-  outerPadding
+  g = null
+  zeroY = 0
+  count = 0
+  width = 0
+  barWidth = 0
+  outerPadding = 0
 
   constructor : (@chart, @brush) ->
     super @chart, @brush
@@ -13,7 +13,7 @@ class FullStackBrush extends Brush
 
   drawBefore: () ->
     g = el('g').translate(@chart.x(), @chart.y());
-    zeroY = @brush.y(0);
+    zeroY = @brush.y.get(0);
     count = @chart.data().length;
 
     outerPadding = @brush.outerPadding || 15
@@ -25,7 +25,7 @@ class FullStackBrush extends Brush
     chart_height = @chart.height();
 
     for i in [0...count]
-      startX = @brush.x(i) - barWidth / 2
+      startX = @brush.x.get(i) - barWidth / 2
       sum = 0
       list = []
 

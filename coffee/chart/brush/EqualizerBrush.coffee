@@ -1,15 +1,15 @@
 class EqualizerBrush extends Brush
-  g
-  zeroY
-  count
-  width
-  barWidth
-  half_width
+  g = null
+  zeroY = 0
+  count = 0
+  width = 0
+  barWidth = 0
+  half_width = 0
 
-  innerPadding
-  outerPadding
-  unit
-  gap
+  innerPadding = 0
+  outerPadding = 0
+  unit = 0
+  gap = 0
 
   constructor: (@chart, @brush) ->
     super @chart, @brush
@@ -17,7 +17,7 @@ class EqualizerBrush extends Brush
   drawBefore : () ->
     g = el("g").translate(@chart.x(), @chart.y());
 
-    zeroY = @brush.y(0);
+    zeroY = @brush.y.get(0);
     count = @chart.data().length;
 
     innerPadding = @brush.innerPadding || 10
@@ -32,11 +32,11 @@ class EqualizerBrush extends Brush
 
   draw : () ->
     for i in [0...count]
-      startX = @brush.x(i) - half_width
+      startX = @brush.x.get(i) - half_width
 
       for j in [0...@brush.target.length]
         barGroup = g.group();
-        startY = @brush.y(@chart.data(i, @brush.target[j]))
+        startY = @brush.y.get(@chart.data(i, @brush.target[j]))
         padding = 1.5
         eY = zeroY
         eIndex = 0

@@ -25,7 +25,7 @@ class ColumnBrush extends Brush
     outerPadding = @brush.outerPadding || 2;
     innerPadding = @brush.innerPadding || 1;
 
-    zeroY = @brush.y(0);
+    zeroY = @brush.y.get(0);
     count = @chart.data().length;
 
     width = @brush.x.rangeBand();
@@ -38,10 +38,10 @@ class ColumnBrush extends Brush
 
   draw : () ->
     for i in [0...count]
-      startX = @brush.x(i) - (half_width / 2)
+      startX = @brush.x.get(i) - (half_width / 2)
 
       for j in [0...@brush.target.length]
-        startY = @brush.y(@chart.data(i)[@brush.target[j]])
+        startY = @brush.y.get(@chart.data(i)[@brush.target[j]])
 
         if (startY <= zeroY)
           g.rect({

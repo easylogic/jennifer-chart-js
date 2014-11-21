@@ -492,54 +492,45 @@ class ColorUtil
       return { cx : arr[0], cy : arr[1],r : arr[2], fx : arr[3], fy : arr[4] }
 
 class Scale
-  _rangeBand = 0
-  _isRound = false
-  _clamp = false
-  _domain = []
-  _range = []
-  _key = ""
-
-  constructor : (domain ,range) ->
-    _domain = domain
-    _range = range
+  constructor : (@_domain ,@_range) ->
     @init()
 
   init : () ->
 
   clamp : (clamp) ->
     if arguments.length == 0
-      _clamp
+      @_clamp
     else
-      _clamp = clamp
+      @_clamp = clamp
       @
     
   get : (x) -> 0
-  max : () -> Math.max(_domain[0], _domain[_domain.length-1])
-  min : () -> Math.min(_domain[0], _domain[_domain.length-1])
+  max : () -> Math.max(@_domain...)
+  min : () -> Math.min(@_domain...)
   rangeBand : (band) ->
     if arguments.length == 0
-      _rangeBand
+      @_rangeBand
     else
-      _rangeBand = band
+      @_rangeBand = band
       @
   rate : (value, max) ->
     @get (@max() * (value / max))
   invert : (y) -> 0
   domain : (values) ->
     if arguments.length is 0
-      _domain
+      @_domain
     else
-      _domain = (value for value in values)
+      @_domain = (value for value in values)
       @
   range : (values) ->
     if arguments.length is 0
-      _range
+      @_range
     else
-      _range = (value for value in values)
+      @_range = (value for value in values)
       @
-  round : () -> _isRound
+  round : () -> @_isRound
   rangeRound : (values) ->
-    _isRound = true
+    @_isRound = true
     @range values
 class LinearScale extends Scale
   constructor : (domain ,range) ->
@@ -589,11 +580,11 @@ class LinearScale extends Scale
         if max < x
           if @clamp() then return max
 
-          last = _domain[_domain.length -1]
-          last2 = _domain[_domain.length -2]
+          last = _domain[_domain.length- 1]
+          last2 = _domain[_domain.length- 2]
 
-          rlast = _range[_range.length -1]
-          rlast2 = _range[_range.length -2]
+          rlast = _range[_range.length - 1]
+          rlast2 = _range[_range.length - 2]
 
           distLast = Math.abs(last - last2)
           distRLast = Math.abs(rlast - rlast2)
@@ -660,21 +651,23 @@ class OrdinalScale extends Scale
     index = -1
     i = 0
     len = _domain.length
-    while i < len
+    for i in [0...len]
       if _domain[i] == x
         index = i
         break
 
       i++;
 
-    if index > -1
-      return _range[index]
-    else
-      if _range[x]
-        _domain[x] = x
-        return _range[x]
+    _range = @range()
 
-    null
+    if index > -1
+      _range[index]
+    else
+      if typeof _range[x] isnt 'undefined'
+        _domain[x] = x
+        _range[x]
+      else
+        null
 
   rangePoints : (interval, padding) ->
     _domain = @domain()
@@ -691,7 +684,6 @@ class OrdinalScale extends Scale
         range[i] = interval[0] + padding / 2 + unit / 2;
       else
         range[i] = range[i - 1] + unit;
-
       i++
 
     @range range
@@ -795,27 +787,31 @@ class ChartBuilder extends Draw
     @root = @svg.g().translate(0.5, 0.5)
 
   initWidget : () ->
+    ###
     @addWidget "title", TitleWidget
     @addWidget "legend", LegendWidget
-
-  initBrush : () ->
     ###
-    @addBrush "area", AreaBrush
+  initBrush : () ->
+
+
+
     @addBrush "bar", BarBrush
-    @addBrush "bargauge", BarGaugeBrush
     @addBrush "bubble", BubbleBrush
     @addBrush "candlestick", CandleStickBrush
-    @addBrush "circlegauge", CircleGaugeBrush
     @addBrush "column", ColumnBrush
     @addBrush "donut", DonutBrush
     @addBrush "equalizer", EqualizerBrush
-    @addBrush "fillgauge", FillGaugeBrush
-    @addBrush "fullgauge", FullGaugeBrush
-    @addBrush "fullstack", FullStackBrush
-    @addBrush "gauge", GagueBrush
     @addBrush "line", LineBrush
     @addBrush "ohlc", OhlcBrush
     @addBrush "path", PathBrush
+    @addBrush "fullstack", FullStackBrush
+    ###
+    @addBrush "area", AreaBrush
+    @addBrush "bargauge", BarGaugeBrush
+    @addBrush "circlegauge", CircleGaugeBrush
+    @addBrush "fillgauge", FillGaugeBrush
+    @addBrush "fullgauge", FullGaugeBrush
+    @addBrush "gauge", GagueBrush
     @addBrush "pie",  PieBrush
     @addBrush "scatter", ScatterBrush
     @addBrush "scatterpath", ScatterPathBrush
@@ -944,8 +940,6 @@ class ChartBuilder extends Draw
   drawObject : (type) ->
     draws = if type == "brush" then  _brush else  _widget
 
-    console.log _brush
-
     if draws
       i = 0
       len = draws.length
@@ -960,7 +954,7 @@ class ChartBuilder extends Draw
         obj.index = i
 
         result = new Obj(@, obj).render()
-        #result.addClass type + " " + obj.type
+        result.addClass type + " " + obj.type
 
         @root.append result
 
@@ -979,7 +973,7 @@ class ChartBuilder extends Draw
 
     if _scales.y || _scales.y1
       if !_scales.y and _scales.y1
-        scales.y = _scales.y1
+        _scales.y = _scales.y1
 
       if !draw.y
         draw.y = if  typeof drawObj.y1 isnt 'undefined' then _scales.y1[drawObj.y1 || 0] else _scales.y[drawObj.y || 0]
@@ -1016,8 +1010,6 @@ class ChartBuilder extends Draw
           newGrid = new Grid(orient, @, g[keyIndex]);
           root = newGrid.render()
           dist = g[keyIndex].dist || 0
-
-          console.log(@x2())
 
           if k == 'y'
             root.translate @x() - dist, @y()
@@ -1222,6 +1214,9 @@ JenniferTheme =
   gridActiveBorderWidth: 1,
 
   # brush styles
+  barBorderColor : "none",
+  barBorderWidth : 0,
+  barBorderOpacity : 0,
   gaugeBackgroundColor : "#ececec",
   gaugeArrowColor : "#666666",
   gaugeFontColor : "#666666",
@@ -1313,6 +1308,9 @@ GradientTheme =
   gridActiveBorderWidth: 1,
 
   # brush styles
+  barBorderColor : "none",
+  barBorderWidth : 0,
+  barBorderOpacity : 0,
   gaugeBackgroundColor : "#ececec",
   gaugeArrowColor : "#666666",
   gaugeFontColor : "#666666",
@@ -1403,6 +1401,9 @@ DarkTheme =
   gridActiveBorderWidth: 1,
 
   # brush styles
+  barBorderColor : "none",
+  barBorderWidth : 0,
+  barBorderOpacity : 0,
   gaugeBackgroundColor : "#3e3e3e",
   gaugeArrowColor : "#a6a6a6",
   gaugeFontColor : "#c5c5c5",
@@ -1488,6 +1489,9 @@ PastelTheme =
   gridActiveBorderWidth : 1,
   
   # brush styles
+  barBorderColor : "none",
+  barBorderWidth : 0,
+  barBorderOpacity : 0,
   gaugeBackgroundColor : "#f5f5f5",
   gaugeArrowColor : "gray",
   gaugeFontColor : "#666666",
@@ -1706,7 +1710,7 @@ class BlockGrid extends Grid
       d = domain[i]
 
       if d isnt ""
-        axis = root.group().translate(0, points[i])
+        axis = root.group().translate(0, points[i] - half_band )
 
         axis.append(@line(
           x2 : if hasLine then full_width else -bar
@@ -2375,7 +2379,7 @@ class RuleGrid extends RangeGrid
     center = @options.center || false
 
 
-class Brush
+class Brush extends Draw
 	constructor: (@chart, @brush) ->
 		@init()
 
@@ -2438,7 +2442,7 @@ class Brush
 		xy = []
 
 		for i in [0...len]
-			startX = @brush.x(i)
+			startX = @brush.x.get(i)
 			data = @chart.data(i)
 
 			for j in [0...@brush.target.length]
@@ -2450,7 +2454,7 @@ class Brush
 					xy[j] = x: [], y: [], value: [], min: [], max: []
 
 				xy[j].x.push (startX);
-				xy[j].y.push(@brush.y(value));
+				xy[j].y.push(@brush.y.get(value));
 				xy[j].value.push(value);
 				xy[j].min.push(value is series.min);
 				xy[j].max.push(value is series.max);
@@ -2470,7 +2474,7 @@ class Brush
 				if j > 0
 					valueSum += data[@brush.target[j - 1]];
 
-			xy[j].y[i] = @brush.y(value + valueSum);
+			xy[j].y[i] = @brush.y.get(value + valueSum);
 
 		xy
 
@@ -2500,11 +2504,12 @@ class BarBrush extends Brush
     outerPadding = @brush.outerPadding || 2;
     innerPadding = @brush.innerPadding || 1;
 
-    zeroX = @brush.x(0);
+    zeroX = @brush.x.get(0);
     count = @chart.data().length;
 
     height = @brush.y.rangeBand();
     half_height = height - (outerPadding * 2);
+
     barHeight = (half_height - (@brush.target.length - 1) * innerPadding) / @brush.target.length;
 
     borderColor = @chart.theme("barBorderColor");
@@ -2512,12 +2517,13 @@ class BarBrush extends Brush
     borderOpacity = @chart.theme("barBorderOpacity");
 
   draw: () ->
+    startY = 0;
     for i in [0...count]
       group = g.group()
-      startY = @brush.y(i) - (half_height / 2)
+      startY = @brush.y.get(i) + (-half_height / 2)
 
       for j in [0...@brush.target.length]
-        startX = @brush.x(@chart.data(i, @brush.target[j]))
+        startX = @brush.x.get(@chart.data(i, @brush.target[j]))
 
         if startX >= zeroX
           group.rect({
@@ -2544,7 +2550,8 @@ class BarBrush extends Brush
             "stroke-opacity" : borderOpacity
           });
 
-      startY += barHeight + innerPadding;
+        startY += barHeight + innerPadding;
+
     g
 
 
@@ -2611,7 +2618,7 @@ class CandleStickBrush extends Brush
     targets = @getTargets()
 
     for i in [0...count]
-      startX = @brush.x(i);
+      startX = @brush.x.get(i);
       r = null
       l = null
 
@@ -2621,13 +2628,13 @@ class CandleStickBrush extends Brush
       high = targets.high.data[i]
 
       if open > close
-        y = @brush.y(open);
+        y = @brush.y.get(open);
 
         g.line({
           x1: startX,
-          y1: @brush.y(high),
+          y1: @brush.y.get(high),
           x2: startX,
-          y2: @brush.y(low),
+          y2: @brush.y.get(low),
           stroke: @chart.theme("candlestickInvertBorderColor"),
           "stroke-width": 1
         });
@@ -2636,19 +2643,19 @@ class CandleStickBrush extends Brush
           x : startX - barPadding,
           y : y,
           width : barWidth,
-          height : Math.abs(@brush.y(close) - y),
+          height : Math.abs(@brush.y.get(close) - y),
           fill : @chart.theme("candlestickInvertBackgroundColor"),
           stroke: @chart.theme("candlestickInvertBorderColor"),
           "stroke-width": 1
         });
       else
-        y = @brush.y(close);
+        y = @brush.y.get(close);
 
         g.line({
           x1: startX,
-          y1: @brush.y(high),
+          y1: @brush.y.get(high),
           x2: startX,
-          y2: @brush.y(low),
+          y2: @brush.y.get(low),
           stroke: @chart.theme("candlestickBorderColor"),
           "stroke-width":1
         });
@@ -2691,7 +2698,7 @@ class OhlcBrush extends Brush
     targets = @getTargets()
 
     for i in [0...count]
-      startX = @brush.x(i);
+      startX = @brush.x.get(i);
 
       open = targets.open.data[i]
       close = targets.close.data[i]
@@ -2702,9 +2709,9 @@ class OhlcBrush extends Brush
       ## lowhigh
       g.line({
         x1: startX,
-        y1: @brush.y(high),
+        y1: @brush.y.get(high),
         x2: startX,
-        y2: @brush.y(low),
+        y2: @brush.y.get(low),
         stroke: color
         "stroke-width": 1
       });
@@ -2712,9 +2719,9 @@ class OhlcBrush extends Brush
       ## close
       g.line({
         x1: startX,
-        y1: @brush.y(close),
+        y1: @brush.y.get(close),
         x2: startX + @chart.theme("ohlcBorderRadius"),
-        y2: @brush.y(close),
+        y2: @brush.y.get(close),
         stroke: color
         "stroke-width": 1
       });
@@ -2722,9 +2729,9 @@ class OhlcBrush extends Brush
       ## open
       g.line({
         x1: startX,
-        y1: @brush.y(open),
+        y1: @brush.y.get(open),
         x2: startX + @chart.theme("ohlcBorderRadius"),
-        y2: @brush.y(open),
+        y2: @brush.y.get(open),
         stroke: color
         "stroke-width": 1
       });
@@ -2757,7 +2764,7 @@ class ColumnBrush extends Brush
     outerPadding = @brush.outerPadding || 2;
     innerPadding = @brush.innerPadding || 1;
 
-    zeroY = @brush.y(0);
+    zeroY = @brush.y.get(0);
     count = @chart.data().length;
 
     width = @brush.x.rangeBand();
@@ -2770,10 +2777,10 @@ class ColumnBrush extends Brush
 
   draw : () ->
     for i in [0...count]
-      startX = @brush.x(i) - (half_width / 2)
+      startX = @brush.x.get(i) - (half_width / 2)
 
       for j in [0...@brush.target.length]
-        startY = @brush.y(@chart.data(i)[@brush.target[j]])
+        startY = @brush.y.get(@chart.data(i)[@brush.target[j]])
 
         if (startY <= zeroY)
           g.rect({
@@ -2914,17 +2921,17 @@ class DonutBrush extends Brush
 
     group
 class EqualizerBrush extends Brush
-  g
-  zeroY
-  count
-  width
-  barWidth
-  half_width
+  g = null
+  zeroY = 0
+  count = 0
+  width = 0
+  barWidth = 0
+  half_width = 0
 
-  innerPadding
-  outerPadding
-  unit
-  gap
+  innerPadding = 0
+  outerPadding = 0
+  unit = 0
+  gap = 0
 
   constructor: (@chart, @brush) ->
     super @chart, @brush
@@ -2932,7 +2939,7 @@ class EqualizerBrush extends Brush
   drawBefore : () ->
     g = el("g").translate(@chart.x(), @chart.y());
 
-    zeroY = @brush.y(0);
+    zeroY = @brush.y.get(0);
     count = @chart.data().length;
 
     innerPadding = @brush.innerPadding || 10
@@ -2947,11 +2954,11 @@ class EqualizerBrush extends Brush
 
   draw : () ->
     for i in [0...count]
-      startX = @brush.x(i) - half_width
+      startX = @brush.x.get(i) - half_width
 
       for j in [0...@brush.target.length]
         barGroup = g.group();
-        startY = @brush.y(@chart.data(i, @brush.target[j]))
+        startY = @brush.y.get(@chart.data(i, @brush.target[j]))
         padding = 1.5
         eY = zeroY
         eIndex = 0
@@ -2986,12 +2993,12 @@ class EqualizerBrush extends Brush
         startX += barWidth + innerPadding;
     g
 class FullStackBrush extends Brush
-  g
-  zeroY
-  count
-  width
-  barWidth
-  outerPadding
+  g = null
+  zeroY = 0
+  count = 0
+  width = 0
+  barWidth = 0
+  outerPadding = 0
 
   constructor : (@chart, @brush) ->
     super @chart, @brush
@@ -3000,7 +3007,7 @@ class FullStackBrush extends Brush
 
   drawBefore: () ->
     g = el('g').translate(@chart.x(), @chart.y());
-    zeroY = @brush.y(0);
+    zeroY = @brush.y.get(0);
     count = @chart.data().length;
 
     outerPadding = @brush.outerPadding || 15
@@ -3012,7 +3019,7 @@ class FullStackBrush extends Brush
     chart_height = @chart.height();
 
     for i in [0...count]
-      startX = @brush.x(i) - barWidth / 2
+      startX = @brush.x.get(i) - barWidth / 2
       sum = 0
       list = []
 
@@ -3055,7 +3062,7 @@ class FullStackBrush extends Brush
 
 class LineBrush extends Brush
 
-  symbol
+  symbol = "normal"
 
   constructor : (@chart, @brush) ->
     super @chart, @brush
@@ -3069,7 +3076,7 @@ class LineBrush extends Brush
     x = pos.x
     y = pos.y
 
-    p = el("path", {
+    p = new Path({
       stroke : @chart.color(index, @brush.colors),
       "stroke-width" : @chart.theme("lineBorderWidth"),
       fill : "transparent"

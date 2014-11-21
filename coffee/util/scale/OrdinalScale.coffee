@@ -6,21 +6,23 @@ class OrdinalScale extends Scale
     index = -1
     i = 0
     len = _domain.length
-    while i < len
+    for i in [0...len]
       if _domain[i] == x
         index = i
         break
 
       i++;
 
-    if index > -1
-      return _range[index]
-    else
-      if _range[x]
-        _domain[x] = x
-        return _range[x]
+    _range = @range()
 
-    null
+    if index > -1
+      _range[index]
+    else
+      if typeof _range[x] isnt 'undefined'
+        _domain[x] = x
+        _range[x]
+      else
+        null
 
   rangePoints : (interval, padding) ->
     _domain = @domain()
@@ -37,7 +39,6 @@ class OrdinalScale extends Scale
         range[i] = interval[0] + padding / 2 + unit / 2;
       else
         range[i] = range[i - 1] + unit;
-
       i++
 
     @range range

@@ -32,6 +32,9 @@ PastelTheme =
   gridActiveBorderWidth : 1,
   
   # brush styles
+  barBorderColor : "none",
+  barBorderWidth : 0,
+  barBorderOpacity : 0,
   gaugeBackgroundColor : "#f5f5f5",
   gaugeArrowColor : "gray",
   gaugeFontColor : "#666666",

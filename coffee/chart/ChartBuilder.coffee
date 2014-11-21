@@ -65,27 +65,31 @@ class ChartBuilder extends Draw
     @root = @svg.g().translate(0.5, 0.5)
 
   initWidget : () ->
+    ###
     @addWidget "title", TitleWidget
     @addWidget "legend", LegendWidget
-
-  initBrush : () ->
     ###
-    @addBrush "area", AreaBrush
+  initBrush : () ->
+
+
+
     @addBrush "bar", BarBrush
-    @addBrush "bargauge", BarGaugeBrush
     @addBrush "bubble", BubbleBrush
     @addBrush "candlestick", CandleStickBrush
-    @addBrush "circlegauge", CircleGaugeBrush
     @addBrush "column", ColumnBrush
     @addBrush "donut", DonutBrush
     @addBrush "equalizer", EqualizerBrush
-    @addBrush "fillgauge", FillGaugeBrush
-    @addBrush "fullgauge", FullGaugeBrush
-    @addBrush "fullstack", FullStackBrush
-    @addBrush "gauge", GagueBrush
     @addBrush "line", LineBrush
     @addBrush "ohlc", OhlcBrush
     @addBrush "path", PathBrush
+    @addBrush "fullstack", FullStackBrush
+    ###
+    @addBrush "area", AreaBrush
+    @addBrush "bargauge", BarGaugeBrush
+    @addBrush "circlegauge", CircleGaugeBrush
+    @addBrush "fillgauge", FillGaugeBrush
+    @addBrush "fullgauge", FullGaugeBrush
+    @addBrush "gauge", GagueBrush
     @addBrush "pie",  PieBrush
     @addBrush "scatter", ScatterBrush
     @addBrush "scatterpath", ScatterPathBrush
@@ -214,8 +218,6 @@ class ChartBuilder extends Draw
   drawObject : (type) ->
     draws = if type == "brush" then  _brush else  _widget
 
-    console.log _brush
-
     if draws
       i = 0
       len = draws.length
@@ -230,7 +232,7 @@ class ChartBuilder extends Draw
         obj.index = i
 
         result = new Obj(@, obj).render()
-        #result.addClass type + " " + obj.type
+        result.addClass type + " " + obj.type
 
         @root.append result
 
@@ -249,7 +251,7 @@ class ChartBuilder extends Draw
 
     if _scales.y || _scales.y1
       if !_scales.y and _scales.y1
-        scales.y = _scales.y1
+        _scales.y = _scales.y1
 
       if !draw.y
         draw.y = if  typeof drawObj.y1 isnt 'undefined' then _scales.y1[drawObj.y1 || 0] else _scales.y[drawObj.y || 0]
@@ -286,8 +288,6 @@ class ChartBuilder extends Draw
           newGrid = new Grid(orient, @, g[keyIndex]);
           root = newGrid.render()
           dist = g[keyIndex].dist || 0
-
-          console.log(@x2())
 
           if k == 'y'
             root.translate @x() - dist, @y()

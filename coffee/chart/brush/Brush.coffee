@@ -1,4 +1,4 @@
-class Brush
+class Brush extends Draw
 	constructor: (@chart, @brush) ->
 		@init()
 
@@ -61,7 +61,7 @@ class Brush
 		xy = []
 
 		for i in [0...len]
-			startX = @brush.x(i)
+			startX = @brush.x.get(i)
 			data = @chart.data(i)
 
 			for j in [0...@brush.target.length]
@@ -73,7 +73,7 @@ class Brush
 					xy[j] = x: [], y: [], value: [], min: [], max: []
 
 				xy[j].x.push (startX);
-				xy[j].y.push(@brush.y(value));
+				xy[j].y.push(@brush.y.get(value));
 				xy[j].value.push(value);
 				xy[j].min.push(value is series.min);
 				xy[j].max.push(value is series.max);
@@ -93,6 +93,6 @@ class Brush
 				if j > 0
 					valueSum += data[@brush.target[j - 1]];
 
-			xy[j].y[i] = @brush.y(value + valueSum);
+			xy[j].y[i] = @brush.y.get(value + valueSum);
 
 		xy

@@ -46,11 +46,11 @@ class LinearScale extends Scale
         if max < x
           if @clamp() then return max
 
-          last = _domain[_domain.length -1]
-          last2 = _domain[_domain.length -2]
+          last = _domain[_domain.length- 1]
+          last2 = _domain[_domain.length- 2]
 
-          rlast = _range[_range.length -1]
-          rlast2 = _range[_range.length -2]
+          rlast = _range[_range.length - 1]
+          rlast2 = _range[_range.length - 2]
 
           distLast = Math.abs(last - last2)
           distRLast = Math.abs(rlast - rlast2)

@@ -23,7 +23,7 @@ class OhlcBrush extends Brush
     targets = @getTargets()
 
     for i in [0...count]
-      startX = @brush.x(i);
+      startX = @brush.x.get(i);
 
       open = targets.open.data[i]
       close = targets.close.data[i]
@@ -34,9 +34,9 @@ class OhlcBrush extends Brush
       ## lowhigh
       g.line({
         x1: startX,
-        y1: @brush.y(high),
+        y1: @brush.y.get(high),
         x2: startX,
-        y2: @brush.y(low),
+        y2: @brush.y.get(low),
         stroke: color
         "stroke-width": 1
       });
@@ -44,9 +44,9 @@ class OhlcBrush extends Brush
       ## close
       g.line({
         x1: startX,
-        y1: @brush.y(close),
+        y1: @brush.y.get(close),
         x2: startX + @chart.theme("ohlcBorderRadius"),
-        y2: @brush.y(close),
+        y2: @brush.y.get(close),
         stroke: color
         "stroke-width": 1
       });
@@ -54,9 +54,9 @@ class OhlcBrush extends Brush
       ## open
       g.line({
         x1: startX,
-        y1: @brush.y(open),
+        y1: @brush.y.get(open),
         x2: startX + @chart.theme("ohlcBorderRadius"),
-        y2: @brush.y(open),
+        y2: @brush.y.get(open),
         stroke: color
         "stroke-width": 1
       });

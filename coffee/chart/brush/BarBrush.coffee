@@ -24,11 +24,12 @@ class BarBrush extends Brush
     outerPadding = @brush.outerPadding || 2;
     innerPadding = @brush.innerPadding || 1;
 
-    zeroX = @brush.x(0);
+    zeroX = @brush.x.get(0);
     count = @chart.data().length;
 
     height = @brush.y.rangeBand();
     half_height = height - (outerPadding * 2);
+
     barHeight = (half_height - (@brush.target.length - 1) * innerPadding) / @brush.target.length;
 
     borderColor = @chart.theme("barBorderColor");
@@ -36,12 +37,13 @@ class BarBrush extends Brush
     borderOpacity = @chart.theme("barBorderOpacity");
 
   draw: () ->
+    startY = 0;
     for i in [0...count]
       group = g.group()
-      startY = @brush.y(i) - (half_height / 2)
+      startY = @brush.y.get(i) + (-half_height / 2)
 
       for j in [0...@brush.target.length]
-        startX = @brush.x(@chart.data(i, @brush.target[j]))
+        startX = @brush.x.get(@chart.data(i, @brush.target[j]))
 
         if startX >= zeroX
           group.rect({
@@ -68,6 +70,7 @@ class BarBrush extends Brush
             "stroke-opacity" : borderOpacity
           });
 
-      startY += barHeight + innerPadding;
+        startY += barHeight + innerPadding;
+
     g
 

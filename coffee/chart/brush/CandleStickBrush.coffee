@@ -30,7 +30,7 @@ class CandleStickBrush extends Brush
     targets = @getTargets()
 
     for i in [0...count]
-      startX = @brush.x(i);
+      startX = @brush.x.get(i);
       r = null
       l = null
 
@@ -40,13 +40,13 @@ class CandleStickBrush extends Brush
       high = targets.high.data[i]
 
       if open > close
-        y = @brush.y(open);
+        y = @brush.y.get(open);
 
         g.line({
           x1: startX,
-          y1: @brush.y(high),
+          y1: @brush.y.get(high),
           x2: startX,
-          y2: @brush.y(low),
+          y2: @brush.y.get(low),
           stroke: @chart.theme("candlestickInvertBorderColor"),
           "stroke-width": 1
         });
@@ -55,19 +55,19 @@ class CandleStickBrush extends Brush
           x : startX - barPadding,
           y : y,
           width : barWidth,
-          height : Math.abs(@brush.y(close) - y),
+          height : Math.abs(@brush.y.get(close) - y),
           fill : @chart.theme("candlestickInvertBackgroundColor"),
           stroke: @chart.theme("candlestickInvertBorderColor"),
           "stroke-width": 1
         });
       else
-        y = @brush.y(close);
+        y = @brush.y.get(close);
 
         g.line({
           x1: startX,
-          y1: @brush.y(high),
+          y1: @brush.y.get(high),
           x2: startX,
-          y2: @brush.y(low),
+          y2: @brush.y.get(low),
           stroke: @chart.theme("candlestickBorderColor"),
           "stroke-width":1
         });

@@ -101,7 +101,7 @@ class BlockGrid extends Grid
       d = domain[i]
 
       if d isnt ""
-        axis = root.group().translate(0, points[i])
+        axis = root.group().translate(0, points[i] - half_band )
 
         axis.append(@line(
           x2 : if hasLine then full_width else -bar

@@ -1,6 +1,6 @@
 class LineBrush extends Brush
 
-  symbol
+  symbol = "normal"
 
   constructor : (@chart, @brush) ->
     super @chart, @brush
@@ -14,7 +14,7 @@ class LineBrush extends Brush
     x = pos.x
     y = pos.y
 
-    p = el("path", {
+    p = new Path({
       stroke : @chart.color(index, @brush.colors),
       "stroke-width" : @chart.theme("lineBorderWidth"),
       fill : "transparent"
