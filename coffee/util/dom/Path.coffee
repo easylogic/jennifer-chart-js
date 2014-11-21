@@ -22,11 +22,11 @@ class Path extends Transform
   HLineTo: (x) ->
     @paths.push "h#{x}"
     @
-  vLineTo: (x, y) ->
-    @paths.push "v#{x}"
+  vLineTo: (y) ->
+    @paths.push "v#{y}"
     @
-  VLineTo: (x, y) ->
-    @paths.push "V#{x}"
+  VLineTo: (y) ->
+    @paths.push "V#{y}"
     @
   curveTo: ( x1,  y1,  x2,  y2,  x,  y) ->
     @paths.push "c" + x1 + "," + y1 + " " + x2 + "," + y2 + " " + x + "," + y

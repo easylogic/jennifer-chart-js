@@ -6,7 +6,7 @@ TimeUtil Class
  */
 
 (function() {
-  var BlockGrid, ChartBuilder, ColorUtil, DarkTheme, DateGrid, DomUtil, Draw, GradientTheme, Grid, JenniferTheme, LegendWidget, LinearScale, MathUtil, OrdinalScale, PastelTheme, Path, Polygon, Polyline, RangeGrid, RuleGrid, Scale, Svg, TimeUtil, TitleWidget, Transform, Widget, el, extend,
+  var BarBrush, BlockGrid, Brush, BubbleBrush, CandleStickBrush, ChartBuilder, ColorUtil, ColumnBrush, DarkTheme, DateGrid, DomUtil, DonutBrush, Draw, EqualizerBrush, FullStackBrush, GradientTheme, Grid, JenniferTheme, LineBrush, LinearScale, MathUtil, OhlcBrush, OrdinalScale, PastelTheme, Path, PathBrush, Polygon, Polyline, RangeGrid, RuleGrid, Scale, Svg, TimeUtil, Transform, el, extend,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -457,13 +457,13 @@ TimeUtil Class
       return this;
     };
 
-    Path.prototype.vLineTo = function(x, y) {
-      this.paths.push("v" + x);
+    Path.prototype.vLineTo = function(y) {
+      this.paths.push("v" + y);
       return this;
     };
 
-    Path.prototype.VLineTo = function(x, y) {
-      this.paths.push("V" + x);
+    Path.prototype.VLineTo = function(y) {
+      this.paths.push("V" + y);
       return this;
     };
 
@@ -2970,7 +2970,7 @@ TimeUtil Class
       len = ticks.length;
       _results = [];
       while (i < len) {
-        isZero = ticks[i] === 0 ? true : false;
+        isZero = ticks[i] === 0;
         axis = root.group().translate(values[i], centerPosition);
         axis.append(this.line({
           y1: center ? -bar : 0,
@@ -3009,7 +3009,7 @@ TimeUtil Class
       len = ticks.length;
       _results = [];
       while (i < len) {
-        isZero = ticks[i] === 0 ? true : false;
+        isZero = ticks[i] === 0;
         axis = root.group().translate(values[i], centerPosition);
         axis.append(this.line({
           y1: center ? -bar : 0,
@@ -3048,7 +3048,7 @@ TimeUtil Class
       len = ticks.length;
       _results = [];
       while (i < len) {
-        isZero = ticks[i] === 0 ? true : false;
+        isZero = ticks[i] === 0;
         axis = root.group().translate(centerPosition, values[i]);
         axis.append(this.line({
           x1: center ? -bar : 0,
@@ -3087,7 +3087,7 @@ TimeUtil Class
       len = ticks.length;
       _results = [];
       while (i < len) {
-        isZero = ticks[i] === 0 ? true : false;
+        isZero = ticks[i] === 0;
         axis = root.group().translate(centerPosition, values[i]);
         axis.append(this.line({
           x1: center ? -bar : 0,
@@ -3141,251 +3141,927 @@ TimeUtil Class
 
   })(RangeGrid);
 
-  Widget = (function(_super) {
-    __extends(Widget, _super);
-
-    function Widget(chart, options) {
+  Brush = (function() {
+    function Brush(chart, brush) {
       this.chart = chart;
-      this.options = options;
+      this.brush = brush;
       this.init();
     }
 
-    Widget.prototype.init = function() {};
+    Brush.prototype.init = function() {};
 
-    Widget.prototype.drawBefore = function() {};
-
-    Widget.prototype.draw = function() {
-      return null;
+    Brush.prototype.curvePoints = function(K) {
+      var a, b, c, i, m, n, p1, p2, r, _i, _j, _k, _l, _ref, _ref1, _ref2;
+      p1 = [];
+      p2 = [];
+      n = K.length - 1;
+      a = [];
+      b = [];
+      c = [];
+      r = [];
+      a[0] = 0;
+      b[0] = 2;
+      c[0] = 1;
+      r[0] = K[0] + 2 * K[1];
+      for (i = _i = 1, _ref = n - 1; 1 <= _ref ? _i < _ref : _i > _ref; i = 1 <= _ref ? ++_i : --_i) {
+        a[i] = 1;
+        b[i] = 4;
+        c[i] = 1;
+        r[i] = 4 * K[i] + 2 * K[i + 1];
+      }
+      a[n - 1] = 2;
+      b[n - 1] = 7;
+      c[n - 1] = 0;
+      r[n - 1] = 8 * K[n - 1] + K[n];
+      for (i = _j = 1; 1 <= n ? _j < n : _j > n; i = 1 <= n ? ++_j : --_j) {
+        m = a[i] / b[i - 1];
+        b[i] = b[i] - m * c[i - 1];
+        r[i] = r[i] - m * r[i - 1];
+      }
+      p1[n - 1] = r[n - 1] / b[n - 1];
+      for (i = _k = _ref1 = n - 2; _ref1 <= 0 ? _k <= 0 : _k >= 0; i = _ref1 <= 0 ? ++_k : --_k) {
+        p1[i] = (r[i] - c[i] * p1[i + 1]) / b[i];
+      }
+      for (i = _l = i, _ref2 = n - 1; i <= _ref2 ? _l < _ref2 : _l > _ref2; i = i <= _ref2 ? ++_l : --_l) {
+        p2[i] = 2 * K[i + 1] - p1[i + 1];
+      }
+      p2[n - 1] = 0.5 * (K[n] + p1[n - 1]);
+      return {
+        p1: p1,
+        p2: p2
+      };
     };
 
-    return Widget;
-
-  })(Draw);
-
-  TitleWidget = (function(_super) {
-    var align, anchor, dx, dy, position, x, y;
-
-    __extends(TitleWidget, _super);
-
-    position = "";
-
-    align = "";
-
-    dx = 0;
-
-    dy = 0;
-
-    x = 0;
-
-    y = 0;
-
-    anchor = "";
-
-    function TitleWidget(chart, options) {
-      this.chart = chart;
-      this.options = options;
-      TitleWidget.__super__.constructor.call(this, this.chart, this.options);
-    }
-
-    TitleWidget.prototype.init = function() {
-      position = this.options.position || "top";
-      align = this.options.align || "center";
-      dx = this.options.dx || 0;
-      return dy = this.options.dy || 0;
+    Brush.prototype.getScaleValue = function(value, minValue, maxValue, minRadius, maxRadius) {
+      var per, range;
+      range = maxRadius - maxRadius;
+      per = (value - minValue) / (maxValue - minValue);
+      return range * per + minRadius;
     };
 
-    TitleWidget.prototype.drawBefore = function() {
-      if (position === "bottom") {
-        y = this.chart.y2() + this.chart.padding("bottom") - 20;
-      } else if (position === "top") {
-        y = 20;
-      } else {
-        y = this.chart.y() + this.chart.height() / 2;
-      }
-      if (align === "center") {
-        x = this.chart.x() + this.chart.width() / 2;
-        return anchor = "middle";
-      } else if (align === "start") {
-        x = this.chart.start();
-        return anchor = "start";
-      } else {
-        x = this.chart.x2();
-        return anchor = "end";
-      }
-    };
-
-    TitleWidget.prototype.draw = function(root) {
-      var half_text_height, half_text_width, text, textHeight, textWidth, unit;
-      if (this.options.text === "") {
-        return;
-      }
-      unit = parseInt(this.chart.theme("titleFontSize"));
-      textWidth = this.options.text.length * unit;
-      textHeight = unit;
-      half_text_width = textWidth / 2;
-      half_text_height = textHeight / 2;
-      text = this.chart.text({
-        x: x + dx,
-        y: y + dy,
-        "text-anchor": anchor,
-        "font-family": this.chart.theme("fontFamily"),
-        "font-size": this.chart.theme("titleFontSize"),
-        "fill": this.chart.theme("titleFontColor")
-      }, this.options.text);
-      if (position === "center") {
-        if (align === "start") {
-          text.rotate(-90, x + dx + half_text_width, y + dy + half_text_height);
-        } else if (align === "end") {
-          text.rotate(90, x + dx - half_text_width, y + dy + half_text_height);
-        }
-      }
-      return text;
-    };
-
-    return TitleWidget;
-
-  })(Widget);
-
-  LegendWidget = (function(_super) {
-    var align, brush, key, position;
-
-    __extends(LegendWidget, _super);
-
-    brush = [0];
-
-    position = "";
-
-    align = "";
-
-    key = null;
-
-    function LegendWidget(chart, options) {
-      this.chart = chart;
-      this.options = options;
-      LegendWidget.__super__.constructor.call(this, this.chart, this.options);
-    }
-
-    LegendWidget.prototype.init = function() {
-      brush = this.options.brush || [0];
-      position = this.options.position || "bottom";
-      align = this.options.align || "center";
-      return key = this.options.key;
-    };
-
-    LegendWidget.prototype.drawBefore = function() {};
-
-    LegendWidget.prototype.getLegendIcon = function(brush) {
-      var arr, count, data, group, height, i, target, text, textHeight, textWidth, unit, width;
-      arr = [];
-      data = brush.target;
-      if (key) {
-        data = this.chart.data();
-      }
-      count = data.length;
-      return arr = (function() {
-        var _i, _results;
-        _results = [];
-        for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
-          if (key) {
-            text = this.chart.series(key).text || data[i][key];
-          } else {
-            target = brush.target[i];
-            text = this.chart.series(target).text || target;
+    Brush.prototype.getXY = function() {
+      var data, i, j, key, len, series, startX, value, xy, _i, _j, _ref;
+      len = this.chart.data().length;
+      xy = [];
+      for (i = _i = 0; 0 <= len ? _i < len : _i > len; i = 0 <= len ? ++_i : --_i) {
+        startX = this.brush.x(i);
+        data = this.chart.data(i);
+        for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
+          key = this.brush.target[j];
+          value = data[key];
+          series = this.chart.series(key);
+          if (!xy[j]) {
+            xy[j] = {
+              x: [],
+              y: [],
+              value: [],
+              min: [],
+              max: []
+            };
           }
-          unit = parseInt(this.chart.theme("legendFontSize"));
-          textWidth = text.length * unit;
-          textHeight = unit;
-          width = Math.min(textWidth, textHeight);
-          height = width;
-          group = el("g", {
-            "class": "legend icon"
-          });
-          group.rect({
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            fill: this.chart.color(i, brush.colors)
-          });
-          group.append(this.chart.text({
-            x: width + 4,
-            y: 11,
-            "font-family": this.chart.theme("fontFamily"),
-            "font-size": this.chart.theme("legendFontSize"),
-            "fill": this.chart.theme("legendFontColor"),
-            "text-anchor": "start"
-          }, text));
-          _results.push({
-            icon: group,
-            width: width + 4 + textWidth + 10,
-            height: height + 4
-          });
+          xy[j].x.push(startX);
+          xy[j].y.push(this.brush.y(value));
+          xy[j].value.push(value);
+          xy[j].min.push(value === series.min);
+          xy[j].max.push(value === series.max);
         }
-        return _results;
-      }).call(this);
+      }
+      return xy;
     };
 
-    LegendWidget.prototype.draw = function() {
-      var arr, b, brushObject, group, index, legend, max_height, max_width, total_height, total_width, x, y, _i, _j, _len, _len1;
-      group = el("g", {
-        "class": "widget legend"
+    Brush.prototype.getStackXY = function() {
+      var data, i, j, key, value, valueSum, xy, _i, _j, _ref, _ref1;
+      xy = this.getXY();
+      for (i = _i = 0, _ref = this.chart.data().length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        data = this.chart.data(i);
+        valueSum = 0;
+        for (j = _j = 0, _ref1 = this.brush.target.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
+          key = this.brush.target[j];
+          value = data[key];
+          if (j > 0) {
+            valueSum += data[this.brush.target[j - 1]];
+          }
+        }
+        xy[j].y[i] = this.brush.y(value + valueSum);
+      }
+      return xy;
+    };
+
+    return Brush;
+
+  })();
+
+  BarBrush = (function(_super) {
+    var barHeight, borderColor, borderOpacity, borderWidth, count, g, half_height, height, innerPadding, outerPadding, zeroX;
+
+    __extends(BarBrush, _super);
+
+    g = null;
+
+    outerPadding = 0;
+
+    innerPadding = 0;
+
+    zeroX = 0;
+
+    count = 0;
+
+    height = 0;
+
+    half_height = 0;
+
+    barHeight = 0;
+
+    borderColor = "";
+
+    borderWidth = "";
+
+    borderOpacity = "";
+
+    function BarBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      BarBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    BarBrush.prototype.init = function() {};
+
+    BarBrush.prototype.drawBefore = function() {
+      g = el("g").translate(this.chart.x(), this.chart.y());
+      outerPadding = this.brush.outerPadding || 2;
+      innerPadding = this.brush.innerPadding || 1;
+      zeroX = this.brush.x(0);
+      count = this.chart.data().length;
+      height = this.brush.y.rangeBand();
+      half_height = height - (outerPadding * 2);
+      barHeight = (half_height - (this.brush.target.length - 1) * innerPadding) / this.brush.target.length;
+      borderColor = this.chart.theme("barBorderColor");
+      borderWidth = this.chart.theme("barBorderWidth");
+      return borderOpacity = this.chart.theme("barBorderOpacity");
+    };
+
+    BarBrush.prototype.draw = function() {
+      var group, i, j, startX, startY, w, _i, _j, _ref;
+      for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+        group = g.group();
+        startY = this.brush.y(i) - (half_height / 2);
+        for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
+          startX = this.brush.x(this.chart.data(i, this.brush.target[j]));
+          if (startX >= zeroX) {
+            group.rect({
+              x: zeroX,
+              y: startY,
+              height: barHeight,
+              width: Math.abs(zeroX - startX),
+              fill: this.chart.color(j, this.brush.colors),
+              stroke: borderColor,
+              "stroke-width": borderWidth,
+              "stroke-opacity": borderOpacity
+            });
+          } else {
+            w = Math.abs(zeroX - startX);
+            group.rect({
+              y: startY,
+              x: zeroX - w,
+              height: barHeight,
+              width: w,
+              fill: this.chart.color(j, this.brush.colors),
+              stroke: borderColor,
+              "stroke-width": borderWidth,
+              "stroke-opacity": borderOpacity
+            });
+          }
+        }
+        startY += barHeight + innerPadding;
+      }
+      return g;
+    };
+
+    return BarBrush;
+
+  })(Brush);
+
+  BubbleBrush = (function(_super) {
+    __extends(BubbleBrush, _super);
+
+    function BubbleBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      BubbleBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    BubbleBrush.prototype.init = function() {};
+
+    BubbleBrush.prototype.createBubble = function(pos, index) {
+      var borderWidth, color, opacity, radius, series;
+      series = this.chart.series(this.brush.target[index]);
+      radius = this.getScaleValue(pos.value, series.min, series.max, brush.min, brush.max);
+      color = this.chart.color(index, this.brush.colors);
+      opacity = this.chart.theme("bubbleOpacity");
+      borderWidth = this.chart.theme("bubbleBorderWidth");
+      return el("circle", {
+        cx: pos.x,
+        cy: pos.y,
+        r: radius,
+        "fill": color,
+        "fill-opacity": opacity,
+        "stroke": color,
+        "stroke-width": borderWidth
       });
-      x = 0;
-      y = 0;
-      total_width = 0;
-      total_height = 0;
-      max_width = 0;
-      max_height = 0;
-      for (_i = 0, _len = brush.length; _i < _len; _i++) {
-        b = brush[_i];
-        index = b;
-        brushObject = this.chart.brush(index);
-        arr = this.getLegendIcon(brushObject);
-        for (_j = 0, _len1 = arr.length; _j < _len1; _j++) {
-          legend = arr[_j];
-          group.append(legend);
-          legend.icon.translate(x, y);
-          if (position === "bottom" || position === "top") {
-            x += legend.width;
-            total_width += legend.width;
-            if (max_height < legend.height) {
-              max_height = legend.height;
-            }
+    };
+
+    BubbleBrush.prototype.drawBubble = function(points) {
+      var g, i, j, _i, _j, _ref, _ref1;
+      g = el('g', {
+        'clip-path': this.chart.url(this.chart.clipId)
+      }).translate(this.chart.x(), this.chart.y());
+      for (i = _i = 0, _ref = points.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        for (j = _j = 0, _ref1 = points[i].x.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
+          g.append(this.createBubble({
+            x: points[i].x[j],
+            y: points[i].y[j],
+            value: points[i].value[j]
+          }, i));
+        }
+      }
+      return g;
+    };
+
+    BubbleBrush.prototype.draw = function() {
+      return this.drawBubble(this.getXY());
+    };
+
+    return BubbleBrush;
+
+  })(Brush);
+
+  CandleStickBrush = (function(_super) {
+    var barPadding, barWidth, count, g, width;
+
+    __extends(CandleStickBrush, _super);
+
+    g = null;
+
+    count = 0;
+
+    width = 0;
+
+    barWidth = 0;
+
+    barPadding = 0;
+
+    function CandleStickBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      CandleStickBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    CandleStickBrush.prototype.init = function() {};
+
+    CandleStickBrush.prototype.getTargets = function() {
+      var t, target, value, _i, _len, _ref;
+      target = {};
+      _ref = this.brush.target;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        value = _ref[_i];
+        t = this.chart.series(value);
+        target[tgt.type] = t;
+      }
+      return target;
+    };
+
+    CandleStickBrush.prototype.drawBefore = function() {
+      g = el("g").translate(this.chart.x(), this.chart.y());
+      count = this.chart.data().length;
+      width = this.brush.x.rangeBand();
+      barWidth = width * 0.7;
+      return barPadding = barWidth / 2;
+    };
+
+    CandleStickBrush.prototype.draw = function() {
+      var close, high, i, l, low, open, r, startX, targets, y, _i;
+      targets = this.getTargets();
+      for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+        startX = this.brush.x(i);
+        r = null;
+        l = null;
+        open = targets.open.data[i];
+        close = targets.close.data[i];
+        low = targets.low.data[i];
+        high = targets.high.data[i];
+        if (open > close) {
+          y = this.brush.y(open);
+          g.line({
+            x1: startX,
+            y1: this.brush.y(high),
+            x2: startX,
+            y2: this.brush.y(low),
+            stroke: this.chart.theme("candlestickInvertBorderColor"),
+            "stroke-width": 1
+          });
+          g.rect({
+            x: startX - barPadding,
+            y: y,
+            width: barWidth,
+            height: Math.abs(this.brush.y(close) - y),
+            fill: this.chart.theme("candlestickInvertBackgroundColor"),
+            stroke: this.chart.theme("candlestickInvertBorderColor"),
+            "stroke-width": 1
+          });
+        } else {
+          y = this.brush.y(close);
+          g.line({
+            x1: startX,
+            y1: this.brush.y(high),
+            x2: startX,
+            y2: this.brush.y(low),
+            stroke: this.chart.theme("candlestickBorderColor"),
+            "stroke-width": 1
+          });
+          g.rect({
+            x: startX - barPadding,
+            y: y,
+            width: barWidth,
+            height: Math.abs(brush.y(open) - y),
+            fill: chart.theme("candlestickBackgroundColor"),
+            stroke: chart.theme("candlestickBorderColor"),
+            "stroke-width": 1
+          });
+        }
+      }
+      return g;
+    };
+
+    return CandleStickBrush;
+
+  })(Brush);
+
+  OhlcBrush = (function(_super) {
+    var count, g;
+
+    __extends(OhlcBrush, _super);
+
+    g = null;
+
+    count = 0;
+
+    function OhlcBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      OhlcBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    OhlcBrush.prototype.init = function() {};
+
+    OhlcBrush.prototype.getTargets = function() {
+      var t, target, value, _i, _len, _ref;
+      target = {};
+      _ref = this.brush.target;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        value = _ref[_i];
+        t = this.chart.series(value);
+        target[tgt.type] = t;
+      }
+      return target;
+    };
+
+    OhlcBrush.prototype.drawBefore = function() {
+      g = el("g").translate(this.chart.x(), this.chart.y());
+      return count = this.chart.data().length;
+    };
+
+    OhlcBrush.prototype.draw = function() {
+      var close, color, high, i, low, open, startX, targets, _i;
+      targets = this.getTargets();
+      for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+        startX = this.brush.x(i);
+        open = targets.open.data[i];
+        close = targets.close.data[i];
+        low = targets.low.data[i];
+        high = targets.high.data[i];
+        color = open > close ? this.chart.theme("ohlcInvertBorderColor") : this.chart.theme("ohlcBorderColor");
+        g.line({
+          x1: startX,
+          y1: this.brush.y(high),
+          x2: startX,
+          y2: this.brush.y(low),
+          stroke: color,
+          "stroke-width": 1
+        });
+        g.line({
+          x1: startX,
+          y1: this.brush.y(close),
+          x2: startX + this.chart.theme("ohlcBorderRadius"),
+          y2: this.brush.y(close),
+          stroke: color,
+          "stroke-width": 1
+        });
+        g.line({
+          x1: startX,
+          y1: this.brush.y(open),
+          x2: startX + this.chart.theme("ohlcBorderRadius"),
+          y2: this.brush.y(open),
+          stroke: color,
+          "stroke-width": 1
+        });
+      }
+      return g;
+    };
+
+    return OhlcBrush;
+
+  })(Brush);
+
+  ColumnBrush = (function(_super) {
+    var borderColor, borderOpacity, borderWidth, columnWidth, count, g, half_width, innerPadding, outerPadding, width, zeroY;
+
+    __extends(ColumnBrush, _super);
+
+    g = null;
+
+    outerPadding = 0;
+
+    innerPadding = 0;
+
+    zeroY = 0;
+
+    count = 0;
+
+    width = 0;
+
+    half_width = 0;
+
+    columnWidth = 0;
+
+    borderColor = "";
+
+    borderWidth = "";
+
+    borderOpacity = "";
+
+    function ColumnBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      ColumnBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    ColumnBrush.prototype.init = function() {};
+
+    ColumnBrush.prototype.drawBefore = function() {
+      g = el("g").translate(chart.x(), chart.y());
+      outerPadding = this.brush.outerPadding || 2;
+      innerPadding = this.brush.innerPadding || 1;
+      zeroY = this.brush.y(0);
+      count = this.chart.data().length;
+      width = this.brush.x.rangeBand();
+      half_width = width - outerPadding * 2;
+      columnWidth = (width - outerPadding * 2 - (this.brush.target.length - 1) * innerPadding) / this.brush.target.length;
+      borderColor = this.chart.theme("columnBorderColor");
+      borderWidth = this.chart.theme("columnBorderWidth");
+      return borderOpacity = this.chart.theme("columnBorderOpacity");
+    };
+
+    ColumnBrush.prototype.draw = function() {
+      var i, j, startX, startY, _i, _j, _ref;
+      for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+        startX = this.brush.x(i) - (half_width / 2);
+        for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
+          startY = this.brush.y(this.chart.data(i)[this.brush.target[j]]);
+          if (startY <= zeroY) {
+            g.rect({
+              x: startX,
+              y: startY,
+              width: columnWidth,
+              height: Math.abs(zeroY - startY),
+              fill: this.chart.color(j, this.brush.colors),
+              stroke: borderColor,
+              "stroke-width": borderWidth,
+              "stroke-opacity": borderOpacity
+            });
           } else {
-            y += legend.height;
-            total_height += legend.height;
-            if (max_width < legend.width) {
-              max_width = legend.width;
-            }
+            g.rect({
+              x: startX,
+              y: zeroY,
+              width: columnWidth,
+              height: Math.abs(zeroY - startY),
+              fill: this.chart.color(j, this.brush.colors),
+              stroke: borderColor,
+              "stroke-width": borderWidth,
+              "stroke-opacity": borderOpacity
+            });
           }
+          startX += columnWidth + innerPadding;
         }
       }
-      if (position === "bottom" || position === "top") {
-        y = position === "bottom" ? this.chart.y2() + this.chart.padding("bottom") - max_height : this.chart.y() - this.chart.padding("top");
-        if (align === "start") {
-          x = this.chart.x();
-        } else if (align === "center") {
-          x = this.chart.x() + (this.chart.width() / 2 - total_width / 2);
-        } else if (align === "end") {
-          x = this.chart.x2() - total_width;
-        }
-      } else {
-        x = position === "left" ? this.chart.x() - this.chart.padding("left") : this.chart.x2() + this.chart.padding("right") - max_width;
-        if (align === "start") {
-          y = this.chart.y();
-        } else if (align === "center") {
-          y = this.chart.y() + (this.chart.height() / 2 - total_height / 2);
-        } else if (align === "end") {
-          y = this.chart.y2() - total_height;
-        }
+      return g;
+    };
+
+    return ColumnBrush;
+
+  })(Brush);
+
+  DonutBrush = (function(_super) {
+    var centerX, centerY, height, innerRadius, min, outerRadius, startX, startY, w, width;
+
+    __extends(DonutBrush, _super);
+
+    width = 0;
+
+    height = 0;
+
+    min = 0;
+
+    w = 0;
+
+    centerX = 0;
+
+    centerY = 0;
+
+    startY = 0;
+
+    startX = 0;
+
+    outerRadius = 0;
+
+    innerRadius = 0;
+
+    function DonutBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      DonutBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    DonutBrush.prototype.init = function() {};
+
+    DonutBrush.prototype.drawDonut = function(centerX, centerY, innerRadius, outerRadius, startAngle, endAngle, attr, hasCircle) {
+      var bigAngle, cX, cY, centerCircle, centerCircleLine, dist, g, innerCircle, obj, path, startInnerX, startInnerY;
+      hasCircle = hasCircle || false;
+      dist = Math.abs(outerRadius - innerRadius);
+      g = el("g", {
+        "class": "donut"
+      });
+      path = g.path(attr);
+      obj = MathUtil.rotate(0, -outerRadius, MathUtil.radian(startAngle));
+      startX = obj.x;
+      startY = obj.y;
+      innerCircle = MathUtil.rotate(0, -innerRadius, MathUtil.radian(startAngle));
+      startInnerX = innerCircle.x;
+      startInnerY = innerCircle.y;
+      path.MoveTo(startX, startY);
+      obj = MathUtil.rotate(startX, startY, MathUtil.radian(endAngle));
+      innerCircle = MathUtil.rotate(startInnerX, startInnerY, MathUtil.radian(endAngle));
+      g.translate(centerX, centerY);
+      bigAngle = endAngle > 180 ? 1 : 0;
+      path.Arc(outerRadius, outerRadius, 0, bigAngle, 1, obj.x, obj.y);
+      path.LineTo(innerCircle.x, innerCircle.y);
+      path.Arc(innerRadius, innerRadius, 0, bigAngle, 0, startInnerX, startInnerY);
+      path.ClosePath();
+      if (hasCircle) {
+        centerCircle = MathUtil.rotate(0, -innerRadius - dist / 2, MathUtil.radian(startAngle));
+        cX = centerCircle.x;
+        cY = centerCircle.y;
+        centerCircleLine = MathUtil.rotate(cX, cY, MathUtil.radian(endAngle));
+        g.circle({
+          cx: centerCircleLine.x,
+          cy: centerCircleLine.y,
+          r: dist / 2,
+          fill: attr.fill
+        });
+        g.circle({
+          cx: centerCircleLine.x,
+          cy: centerCircleLine.y,
+          r: 3,
+          fill: "white"
+        });
       }
-      group.translate(x, y);
+      return g;
+    };
+
+    DonutBrush.prototype.drawBefore = function() {
+      width = this.chart.width();
+      height = this.chart.height();
+      min = width;
+      if (height < min) {
+        min = height;
+      }
+      w = min / 2;
+      centerX = width / 2;
+      centerY = height / 2;
+      startY = -w;
+      startX = 0;
+      outerRadius = Math.abs(startY);
+      return innerRadius = outerRadius - this.brush.size;
+    };
+
+    DonutBrush.prototype.draw = function() {
+      var all, d, data, endAngle, g, group, i, max, s, startAngle, _i, _j, _len, _ref, _ref1;
+      s = this.chart.series(this.brush.target[0]);
+      group = el("g", {
+        "class": "brush donut"
+      }).translate(this.chart.x(), this.chart.y());
+      all = 360;
+      startAngle = 0;
+      max = 0;
+      _ref = s.data;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        d = _ref[_i];
+        max += d;
+      }
+      for (i = _j = 0, _ref1 = s.data.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+        data = s.data[i];
+        endAngle = all * (data / max);
+        g = this.drawDonut(centerX, centerY, innerRadius, outerRadius, startAngle, endAngle, {
+          fill: this.chart.color(i, this.brush.colors),
+          stroke: this.chart.theme("donutBorderColor"),
+          "stroke-width": this.chart.theme("donutBorderWidth")
+        });
+        group.append(g);
+        startAngle += endAngle;
+      }
       return group;
     };
 
-    return LegendWidget;
+    return DonutBrush;
 
-  })(Widget);
+  })(Brush);
+
+  EqualizerBrush = (function(_super) {
+    __extends(EqualizerBrush, _super);
+
+    g;
+
+    zeroY;
+
+    count;
+
+    width;
+
+    barWidth;
+
+    half_width;
+
+    innerPadding;
+
+    outerPadding;
+
+    unit;
+
+    gap;
+
+    function EqualizerBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      EqualizerBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    EqualizerBrush.prototype.drawBefore = function() {
+      var barWidth, count, g, gap, half_width, innerPadding, outerPadding, unit, width, zeroY;
+      g = el("g").translate(this.chart.x(), this.chart.y());
+      zeroY = this.brush.y(0);
+      count = this.chart.data().length;
+      innerPadding = this.brush.innerPadding || 10;
+      outerPadding = this.brush.outerPadding || 15;
+      unit = this.brush.unit || 5;
+      gap = this.brush.gap || 5;
+      width = this.brush.x.rangeBand();
+      half_width = (width - outerPadding * 2) / 2;
+      return barWidth = (width - outerPadding * 2 - (target.length - 1) * innerPadding) / target.length;
+    };
+
+    EqualizerBrush.prototype.draw = function() {
+      var barGroup, eIndex, eY, i, j, padding, startX, startY, unitHeight, _i, _j, _ref;
+      for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+        startX = this.brush.x(i) - half_width;
+        for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
+          barGroup = g.group();
+          startY = this.brush.y(this.chart.data(i, this.brush.target[j]));
+          padding = 1.5;
+          eY = zeroY;
+          eIndex = 0;
+          if (startY <= zeroY) {
+            while (eY > startY) {
+              unitHeight = eY - unit < startY ? Math.abs(eY - startY) : unit;
+              barGroup.rect({
+                x: startX,
+                y: eY - unitHeight,
+                width: barWidth,
+                height: unitHeight,
+                fill: this.chart.color(Math.floor(eIndex / gap), this.brush.colors)
+              });
+              eY -= unitHeight + padding;
+              eIndex++;
+            }
+          } else {
+            while (eY < startY) {
+              unitHeight = eY + unit > startY ? Math.abs(eY - startY) : unit;
+              barGroup.rect({
+                x: startX,
+                y: eY,
+                width: barWidth,
+                height: unitHeight,
+                fill: this.chart.color(Math.floor(eIndex / gap), this.brush.colors)
+              });
+              eY += unitHeight + padding;
+              eIndex++;
+            }
+          }
+          startX += barWidth + innerPadding;
+        }
+      }
+      return g;
+    };
+
+    return EqualizerBrush;
+
+  })(Brush);
+
+  FullStackBrush = (function(_super) {
+    __extends(FullStackBrush, _super);
+
+    g;
+
+    zeroY;
+
+    count;
+
+    width;
+
+    barWidth;
+
+    outerPadding;
+
+    function FullStackBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      FullStackBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    FullStackBrush.prototype.init = function() {};
+
+    FullStackBrush.prototype.drawBefore = function() {
+      var barWidth, count, g, outerPadding, width, zeroY;
+      g = el('g').translate(this.chart.x(), this.chart.y());
+      zeroY = this.brush.y(0);
+      count = this.chart.data().length;
+      outerPadding = this.brush.outerPadding || 15;
+      width = this.brush.x.rangeBand();
+      return barWidth = width - outerPadding * 2;
+    };
+
+    FullStackBrush.prototype.draw = function() {
+      var chart_height, current, height, i, j, list, max, percent, startX, startY, sum, _i, _j, _ref;
+      chart_height = this.chart.height();
+      for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+        startX = this.brush.x(i) - barWidth / 2;
+        sum = 0;
+        list = [];
+        list = (function() {
+          var _j, _ref, _results;
+          _results = [];
+          for (j = _j = 0, _ref = this.brush.target.length; 0 <= _ref ? _j < _ref : _j > _ref; j = 0 <= _ref ? ++_j : --_j) {
+            height = this.chart.data(i, this.brush.target[j]);
+            sum += height;
+            _results.push(height);
+          }
+          return _results;
+        }).call(this);
+        startY = 0;
+        max = this.brush.y.max();
+        current = max;
+        for (j = _j = _ref = list.length; _ref <= 0 ? _j < 0 : _j > 0; j = _ref <= 0 ? ++_j : --_j) {
+          height = chart_height - this.brush.y.rate(list[j], sum);
+          g.rect({
+            x: startX,
+            y: startY,
+            width: barWidth,
+            height: height,
+            fill: this.chart.color(j, this.brush.colors)
+          });
+          if (this.brush.text) {
+            percent = Math.round((list[j] / sum) * max);
+            g.text({
+              x: startX + barWidth / 2,
+              y: startY + height / 2 + 8,
+              "text-anchor": "middle"
+            }, (current - percent < 0 ? current : percent) + "%");
+            current -= percent;
+          }
+          startY += height;
+        }
+      }
+      return g;
+    };
+
+    return FullStackBrush;
+
+  })(Brush);
+
+  LineBrush = (function(_super) {
+    __extends(LineBrush, _super);
+
+    symbol;
+
+    function LineBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      LineBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    LineBrush.prototype.init = function() {};
+
+    LineBrush.prototype.drawBefore = function() {
+      var symbol;
+      return symbol = this.brush.symbol || "normal";
+    };
+
+    LineBrush.prototype.createLine = function(pos, index) {
+      var i, p, px, py, sx, x, y, _i, _j, _ref, _ref1;
+      x = pos.x;
+      y = pos.y;
+      p = el("path", {
+        stroke: this.chart.color(index, this.brush.colors),
+        "stroke-width": this.chart.theme("lineBorderWidth"),
+        fill: "transparent"
+      }).MoveTo(x[0], y[0]);
+      if (symbol === "curve") {
+        px = this.curvePoints(x);
+        py = this.curvePoints(y);
+        for (i = _i = 0, _ref = x.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+          p.CurveTo(px.p1[i], py.p1[i], px.p2[i], py.p2[i], x[i + 1], y[i + 1]);
+        }
+      } else {
+        for (i = _j = 0, _ref1 = x.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+          if (symbol === "step") {
+            sx = x[i] + ((x[i + 1] - x[i]) / 2);
+            p.LineTo(sx, y[i]);
+            p.LineTo(sx, y[i + 1]);
+          }
+          p.LineTo(x[i + 1], y[i + 1]);
+        }
+      }
+      return p;
+    };
+
+    LineBrush.prototype.drawLine = function(path) {
+      var g, k, p, _i, _ref;
+      g = el('g').translate(this.chart.x(), this.chart.y());
+      for (k = _i = 0, _ref = path.length; 0 <= _ref ? _i < _ref : _i > _ref; k = 0 <= _ref ? ++_i : --_i) {
+        p = this.createLine(path[k], k);
+        g.append(p);
+      }
+      return g;
+    };
+
+    LineBrush.prototype.draw = function() {
+      return this.drawLine(this.getXY());
+    };
+
+    return LineBrush;
+
+  })(Brush);
+
+  PathBrush = (function(_super) {
+    __extends(PathBrush, _super);
+
+    function PathBrush(chart, brush) {
+      this.chart = chart;
+      this.brush = brush;
+      PathBrush.__super__.constructor.call(this, this.chart, this.brush);
+    }
+
+    PathBrush.prototype.init = function() {};
+
+    PathBrush.prototype.draw = function() {
+      var color, count, data, g, i, obj, path, ti, _i, _j, _ref;
+      g = el("g", {
+        "class": "brush path"
+      });
+      data = this.chart.data();
+      count = data.length;
+      for (ti = _i = 0, _ref = this.brush.target.length; 0 <= _ref ? _i < _ref : _i > _ref; ti = 0 <= _ref ? ++_i : --_i) {
+        color = this.chart.color(ti, this.brush.colors);
+        path = g.path({
+          fill: color,
+          "fill-opacity": this.chart.theme("pathOpacity"),
+          stroke: color,
+          "stroke-width": this.chart.theme("pathBorderWidth")
+        });
+        for (i = _j = 0; 0 <= count ? _j < count : _j > count; i = 0 <= count ? ++_j : --_j) {
+          obj = this.brush.c(i, this.chart.data(i, this.brush.target[ti]));
+          if (i === 0) {
+            path.MoveTo(obj.x, obj.y);
+          } else {
+            path.LineTo(obj.x, obj.y);
+          }
+        }
+        path.ClosePath();
+      }
+      return g;
+    };
+
+    return PathBrush;
+
+  })(Brush);
 
   if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
     module.exports = ChartBuilder;

@@ -31,7 +31,7 @@ class RuleGrid extends RangeGrid
     i = 0
     len = ticks.length
     while i < len
-      isZero = if ticks[i] == 0 then true else false
+      isZero = ticks[i] is 0
 
       axis = root.group().translate(values[i], centerPosition)
 
@@ -73,7 +73,7 @@ class RuleGrid extends RangeGrid
     i = 0
     len = ticks.length
     while i < len
-      isZero = if ticks[i] == 0 then true else false
+      isZero = ticks[i] is 0
 
       axis = root.group().translate(values[i], centerPosition)
 
@@ -115,7 +115,7 @@ class RuleGrid extends RangeGrid
     i = 0
     len = ticks.length
     while i < len
-      isZero = if ticks[i] == 0 then true else false
+      isZero = ticks[i] is 0
 
       axis = root.group().translate(centerPosition, values[i])
 
@@ -157,7 +157,7 @@ class RuleGrid extends RangeGrid
     i = 0
     len = ticks.length
     while i < len
-      isZero = if ticks[i] == 0 then true else false
+      isZero = ticks[i] is 0
 
       axis = root.group().translate(centerPosition, values[i])
 

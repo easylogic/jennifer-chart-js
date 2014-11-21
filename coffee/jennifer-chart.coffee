@@ -226,11 +226,11 @@ class Path extends Transform
   HLineTo: (x) ->
     @paths.push "h#{x}"
     @
-  vLineTo: (x, y) ->
-    @paths.push "v#{x}"
+  vLineTo: (y) ->
+    @paths.push "v#{y}"
     @
-  VLineTo: (x, y) ->
-    @paths.push "V#{x}"
+  VLineTo: (y) ->
+    @paths.push "V#{y}"
     @
   curveTo: ( x1,  y1,  x2,  y2,  x,  y) ->
     @paths.push "c" + x1 + "," + y1 + " " + x2 + "," + y2 + " " + x + "," + y
@@ -2203,7 +2203,7 @@ class RuleGrid extends RangeGrid
     i = 0
     len = ticks.length
     while i < len
-      isZero = if ticks[i] == 0 then true else false
+      isZero = ticks[i] is 0
 
       axis = root.group().translate(values[i], centerPosition)
 
@@ -2245,7 +2245,7 @@ class RuleGrid extends RangeGrid
     i = 0
     len = ticks.length
     while i < len
-      isZero = if ticks[i] == 0 then true else false
+      isZero = ticks[i] is 0
 
       axis = root.group().translate(values[i], centerPosition)
 
@@ -2287,7 +2287,7 @@ class RuleGrid extends RangeGrid
     i = 0
     len = ticks.length
     while i < len
-      isZero = if ticks[i] == 0 then true else false
+      isZero = ticks[i] is 0
 
       axis = root.group().translate(centerPosition, values[i])
 
@@ -2329,7 +2329,7 @@ class RuleGrid extends RangeGrid
     i = 0
     len = ticks.length
     while i < len
-      isZero = if ticks[i] == 0 then true else false
+      isZero = ticks[i] is 0
 
       axis = root.group().translate(centerPosition, values[i])
 
@@ -2375,198 +2375,768 @@ class RuleGrid extends RangeGrid
     center = @options.center || false
 
 
-class Widget extends Draw
-  constructor: (@chart, @options) ->
-    @init()
+class Brush
+	constructor: (@chart, @brush) ->
+		@init()
+
+	init: () ->
+
+	curvePoints: (K) ->
+		p1 = []
+		p2 = []
+		n = K.length - 1
+
+		a = []
+		b = []
+		c = []
+		r = []
+
+		#	/*left most segment*/
+		a[0] = 0;
+		b[0] = 2;
+		c[0] = 1;
+		r[0] = K[0] + 2 * K[1]
+
+		#	/*internal segments*/
+		for i in [1...(n-1)]
+			a[i] = 1
+			b[i] = 4
+			c[i] = 1
+			r[i] = 4 * K[i] + 2 * K[i + 1]
+
+		#/*right segment*/
+		a[n - 1] = 2
+		b[n - 1] = 7
+		c[n - 1] = 0
+		r[n - 1] = 8 * K[n - 1] + K[n]
+
+		#/*solves Ax=b with the Thomas algorithm (from Wikipedia)*/
+		for i in [1...n]
+			m = a[i] / b[i - 1]
+			b[i] = b[i] - m * c[i - 1]
+			r[i] = r[i] - m * r[i - 1]
+
+		p1[n - 1] = r[n - 1] / b[n - 1]
+
+		for i in [(n-2)..0]
+			p1[i] = (r[i] - c[i] * p1[i + 1]) / b[i]
+
+		#we have p1, now compute p2*/
+		for i in [i...(n-1)]
+			p2[i] = 2 * K[i + 1] - p1[i + 1]
+
+		p2[n - 1] = 0.5 * (K[n] + p1[n - 1])
+		p1: p1, p2: p2
+
+	getScaleValue : (value, minValue, maxValue, minRadius, maxRadius) ->
+		range = maxRadius - maxRadius
+		per = (value - minValue) / (maxValue - minValue)
+		range * per + minRadius
+
+	getXY : () ->
+		len = @chart.data().length;
+		xy = []
+
+		for i in [0...len]
+			startX = @brush.x(i)
+			data = @chart.data(i)
+
+			for j in [0...@brush.target.length]
+				key = @brush.target[j];
+				value = data[key];
+				series = @chart.series(key);
+
+				if !xy[j]
+					xy[j] = x: [], y: [], value: [], min: [], max: []
+
+				xy[j].x.push (startX);
+				xy[j].y.push(@brush.y(value));
+				xy[j].value.push(value);
+				xy[j].min.push(value is series.min);
+				xy[j].max.push(value is series.max);
+		xy
+
+	getStackXY : () ->
+		xy = @getXY()
+
+		for i in [0...@chart.data().length]
+			data = @chart.data(i)
+			valueSum = 0
+
+			for j in [0...@brush.target.length]
+				key = @brush.target[j]
+				value = data[key]
+
+				if j > 0
+					valueSum += data[@brush.target[j - 1]];
+
+			xy[j].y[i] = @brush.y(value + valueSum);
+
+		xy
+
+class BarBrush extends Brush
+
+  g = null
+  outerPadding = 0
+  innerPadding = 0
+  zeroX = 0
+  count = 0
+  height = 0
+  half_height = 0
+  barHeight = 0
+
+  borderColor = ""
+  borderWidth = ""
+  borderOpacity = ""
+
+  constructor: (@chart, @brush) ->
+    super @chart, @brush
 
   init: () ->
-  drawBefore : () -> 
-  draw : () -> null
 
-class TitleWidget extends Widget
+  drawBefore : () ->
+    g = el("g").translate(@chart.x(), @chart.y());
 
-  position = "";
-  align = "";
-  dx = 0;
-  dy = 0;
-  x = 0;
-  y = 0;
-  anchor = "";
+    outerPadding = @brush.outerPadding || 2;
+    innerPadding = @brush.innerPadding || 1;
+
+    zeroX = @brush.x(0);
+    count = @chart.data().length;
+
+    height = @brush.y.rangeBand();
+    half_height = height - (outerPadding * 2);
+    barHeight = (half_height - (@brush.target.length - 1) * innerPadding) / @brush.target.length;
+
+    borderColor = @chart.theme("barBorderColor");
+    borderWidth = @chart.theme("barBorderWidth");
+    borderOpacity = @chart.theme("barBorderOpacity");
+
+  draw: () ->
+    for i in [0...count]
+      group = g.group()
+      startY = @brush.y(i) - (half_height / 2)
+
+      for j in [0...@brush.target.length]
+        startX = @brush.x(@chart.data(i, @brush.target[j]))
+
+        if startX >= zeroX
+          group.rect({
+            x : zeroX,
+            y : startY,
+            height : barHeight,
+            width : Math.abs(zeroX - startX),
+            fill : @chart.color(j, @brush.colors),
+            stroke : borderColor,
+            "stroke-width" : borderWidth,
+            "stroke-opacity" : borderOpacity
+          })
+        else
+          w = Math.abs(zeroX - startX);
+
+          group.rect({
+            y : startY,
+            x : zeroX - w,
+            height : barHeight,
+            width : w,
+            fill : @chart.color(j, @brush.colors),
+            stroke : borderColor,
+            "stroke-width" : borderWidth,
+            "stroke-opacity" : borderOpacity
+          });
+
+      startY += barHeight + innerPadding;
+    g
 
 
-  constructor : (@chart, @options) ->
-    super @chart, @options
+class BubbleBrush extends Brush
+
+
+  constructor: (@chart, @brush) ->
+    super @chart, @brush
 
   init : () ->
-    position = @options.position || "top";
-    align = @options.align || "center";
-    dx = @options.dx || 0;
-    dy = @options.dy || 0;
 
-  drawBefore : () ->
-    if position is "bottom"
-      y = @chart.y2() + @chart.padding("bottom") - 20;
-    else if position is "top"
-      y = 20
-    else
-      y = @chart.y() + @chart.height() / 2;
+  createBubble : (pos, index) ->
+    series = @chart.series(@brush.target[index])
+    radius = @getScaleValue(pos.value, series.min, series.max, brush.min, brush.max)
 
-    if align is "center"
-      x = @chart.x() + @chart.width() / 2
-      anchor = "middle"
-    else if align is "start"
-      x = @chart.start()
-      anchor = "start"
-    else
-      x = @chart.x2();
-      anchor = "end";
-  draw : (root) ->
-    if @options.text is ""
-      return
+    color = @chart.color(index, @brush.colors)
+    opacity = @chart.theme("bubbleOpacity")
+    borderWidth = @chart.theme("bubbleBorderWidth")
 
-    unit = parseInt(@chart.theme("titleFontSize"));
-    textWidth = @options.text.length * unit;
-    textHeight = unit
+    el("circle", { cx: pos.x, cy: pos.y, r: radius, "fill": color, "fill-opacity": opacity, "stroke": color, "stroke-width": borderWidth })
 
-    half_text_width = textWidth/2;
-    half_text_height = textHeight/2;
+  drawBubble: (points) ->
+    g = el('g', 'clip-path' : @chart.url(@chart.clipId) ).translate(@chart.x(), @chart.y())
 
-    text = @chart.text({
-      x : x + dx,
-      y : y + dy,
-      "text-anchor" : anchor,
-      "font-family" : @chart.theme("fontFamily"),
-      "font-size" : @chart.theme("titleFontSize"),
-      "fill" : @chart.theme("titleFontColor")
-    }, @options.text)
-
-    if position is "center"
-      if align is "start"
-        text.rotate(-90, x + dx + half_text_width, y + dy + half_text_height)
-      else if align is "end"
-        text.rotate(90, x + dx - half_text_width, y + dy + half_text_height)
-
-    text
-class LegendWidget extends Widget
-
-  brush = [ 0 ]
-  position = ""
-  align = ""
-  key = null
-
-  constructor: (@chart, @options) ->
-    super @chart, @options
-
-  init: () ->
-    brush = @options.brush || [0]
-    position = @options.position || "bottom"
-    align = @options.align || "center"
-    key = @options.key
-
-  drawBefore : () ->
-
-  getLegendIcon : (brush) ->
-    arr = []
-    data = brush.target
-
-    if key
-      data = @chart.data()
-
-    count = data.length
-
-    arr = for i in [0...count]
-      if key
-        text = @chart.series(key).text || data[i][key]
-      else
-        target = brush.target[i]
-        text = @chart.series(target).text || target
-
-      unit = parseInt(@chart.theme("legendFontSize"))
-      textWidth = text.length * unit
-      textHeight = unit
-
-      width = Math.min(textWidth, textHeight)
-      height = width
-
-      group = el("g", "class" : "legend icon")
-
-      group.rect({
-        x: 0,
-        y : 0,
-        width: width,
-        height : height,
-        fill : @chart.color(i, brush.colors)
-      })
-
-      group.append(@chart.text({
-        x : width + 4,
-        y : 11,
-        "font-family" : @chart.theme("fontFamily"),
-        "font-size" : @chart.theme("legendFontSize"),
-        "fill" : @chart.theme("legendFontColor"),
-        "text-anchor" : "start"
-      }, text))
-
-
-
-      {icon : group, width : width + 4 + textWidth + 10, height : height + 4}
+    for i in [0...points.length]
+      for j in [0...points[i].x.length]
+        g.append @createBubble({ x: points[i].x[j],  y: points[i].y[j],value: points[i].value[j] }, i)
+    g
 
   draw : () ->
-    group = el("g", "class" : "widget legend")
+    @drawBubble(@getXY())
 
-    x = 0
-    y = 0
-    total_width = 0
-    total_height = 0
-    max_width = 0
-    max_height = 0
 
-    for b in brush
-      index = b
-      brushObject = @chart.brush(index)
 
-      arr = @getLegendIcon(brushObject)
+class CandleStickBrush extends Brush
 
-      for legend in arr
-        group.append(legend)
-        legend.icon.translate(x, y)
+  g = null
+  count = 0
+  width = 0
+  barWidth = 0
+  barPadding = 0
 
-        if position is "bottom" or position is "top"
-          x += legend.width;
-          total_width += legend.width;
+  constructor: (@chart, @brush) ->
+    super @chart, @brush
 
-          if max_height < legend.height
-            max_height = legend.height
+  init: () ->
+
+  getTargets : () ->
+    target = {}
+    for value in @brush.target
+      t = @chart.series(value)
+      target[tgt.type] = t
+    target
+
+  drawBefore : () ->
+    g = el("g").translate(@chart.x(), @chart.y())
+
+    count = @chart.data().length
+    width = @brush.x.rangeBand()
+    barWidth = width * 0.7
+    barPadding = barWidth / 2
+
+  draw : () ->
+    targets = @getTargets()
+
+    for i in [0...count]
+      startX = @brush.x(i);
+      r = null
+      l = null
+
+      open = targets.open.data[i]
+      close = targets.close.data[i]
+      low =  targets.low.data[i]
+      high = targets.high.data[i]
+
+      if open > close
+        y = @brush.y(open);
+
+        g.line({
+          x1: startX,
+          y1: @brush.y(high),
+          x2: startX,
+          y2: @brush.y(low),
+          stroke: @chart.theme("candlestickInvertBorderColor"),
+          "stroke-width": 1
+        });
+
+        g.rect({
+          x : startX - barPadding,
+          y : y,
+          width : barWidth,
+          height : Math.abs(@brush.y(close) - y),
+          fill : @chart.theme("candlestickInvertBackgroundColor"),
+          stroke: @chart.theme("candlestickInvertBorderColor"),
+          "stroke-width": 1
+        });
+      else
+        y = @brush.y(close);
+
+        g.line({
+          x1: startX,
+          y1: @brush.y(high),
+          x2: startX,
+          y2: @brush.y(low),
+          stroke: @chart.theme("candlestickBorderColor"),
+          "stroke-width":1
+        });
+
+        g.rect({
+          x : startX - barPadding,
+          y : y,
+          width : barWidth,
+          height : Math.abs(brush.y(open) - y),
+          fill : chart.theme("candlestickBackgroundColor"),
+          stroke: chart.theme("candlestickBorderColor"),
+          "stroke-width": 1
+        })
+
+    g
+
+
+class OhlcBrush extends Brush
+
+  g = null
+  count = 0
+
+  constructor: (@chart, @brush) ->
+    super @chart, @brush
+
+  init : () ->
+
+  getTargets : () ->
+    target = {}
+    for value in @brush.target
+      t = @chart.series(value)
+      target[tgt.type] = t
+    target
+
+  drawBefore : () ->
+    g = el("g").translate(@chart.x(), @chart.y())
+    count = @chart.data().length
+
+  draw : () ->
+    targets = @getTargets()
+
+    for i in [0...count]
+      startX = @brush.x(i);
+
+      open = targets.open.data[i]
+      close = targets.close.data[i]
+      low =  targets.low.data[i]
+      high = targets.high.data[i]
+      color = if open > close then @chart.theme("ohlcInvertBorderColor") else @chart.theme("ohlcBorderColor")
+
+      ## lowhigh
+      g.line({
+        x1: startX,
+        y1: @brush.y(high),
+        x2: startX,
+        y2: @brush.y(low),
+        stroke: color
+        "stroke-width": 1
+      });
+
+      ## close
+      g.line({
+        x1: startX,
+        y1: @brush.y(close),
+        x2: startX + @chart.theme("ohlcBorderRadius"),
+        y2: @brush.y(close),
+        stroke: color
+        "stroke-width": 1
+      });
+
+      ## open
+      g.line({
+        x1: startX,
+        y1: @brush.y(open),
+        x2: startX + @chart.theme("ohlcBorderRadius"),
+        y2: @brush.y(open),
+        stroke: color
+        "stroke-width": 1
+      });
+
+    g
+class ColumnBrush extends Brush
+
+  g = null
+  outerPadding = 0
+  innerPadding = 0
+  zeroY = 0
+  count = 0
+
+  width = 0
+  half_width = 0
+  columnWidth = 0
+
+  borderColor = ""
+  borderWidth = ""
+  borderOpacity = ""
+
+  constructor: (@chart, @brush) ->
+    super @chart, @brush
+
+  init : () ->
+
+  drawBefore : () ->
+    g = el("g").translate(chart.x(), chart.y());
+
+    outerPadding = @brush.outerPadding || 2;
+    innerPadding = @brush.innerPadding || 1;
+
+    zeroY = @brush.y(0);
+    count = @chart.data().length;
+
+    width = @brush.x.rangeBand();
+    half_width = (width - outerPadding * 2);
+    columnWidth = (width - outerPadding * 2 - (@brush.target.length - 1) * innerPadding) / @brush.target.length;
+
+    borderColor = @chart.theme("columnBorderColor");
+    borderWidth = @chart.theme("columnBorderWidth");
+    borderOpacity = @chart.theme("columnBorderOpacity");
+
+  draw : () ->
+    for i in [0...count]
+      startX = @brush.x(i) - (half_width / 2)
+
+      for j in [0...@brush.target.length]
+        startY = @brush.y(@chart.data(i)[@brush.target[j]])
+
+        if (startY <= zeroY)
+          g.rect({
+            x : startX,
+            y : startY,
+            width : columnWidth,
+            height : Math.abs(zeroY - startY),
+            fill : @chart.color(j, @brush.colors),
+            stroke : borderColor,
+            "stroke-width" : borderWidth,
+            "stroke-opacity" : borderOpacity
+          });
         else
-          y += legend.height;
-          total_height += legend.height;
+          g.rect({
+            x : startX,
+            y : zeroY,
+            width : columnWidth,
+            height : Math.abs(zeroY - startY),
+            fill : @chart.color(j, @brush.colors),
+            stroke : borderColor,
+            "stroke-width" : borderWidth,
+            "stroke-opacity" : borderOpacity
+          });
 
-          if max_width < legend.width
-            max_width = legend.width
+        startX += columnWidth + innerPadding;
+    g
+class DonutBrush extends Brush
 
+  width = 0
+  height = 0
+  min = 0
+  w = 0
+  centerX = 0
+  centerY = 0
+  startY = 0
+  startX = 0
+  outerRadius = 0
+  innerRadius = 0
 
+  constructor : (@chart, @brush) ->
+    super @chart, @brush
 
-    if position is "bottom" or position is "top"
-      y = if position is "bottom" then @chart.y2() + @chart.padding("bottom") - max_height  else  @chart.y() - @chart.padding("top")
+  init : () ->
 
-      if align is "start"
-        x = @chart.x()
-      else if align is "center"
-        x = @chart.x() + (@chart.width() / 2- total_width / 2)
-      else if align is "end"
-        x = @chart.x2() - total_width
-    else
-      x = if position  is "left" then  @chart.x() - @chart.padding("left") else  @chart.x2() + @chart.padding("right") - max_width
+  drawDonut: (centerX, centerY, innerRadius, outerRadius, startAngle, endAngle, attr, hasCircle) ->
+    hasCircle = hasCircle || false;
 
-      if align  is "start"
-        y = @chart.y()
-      else if align is "center"
-        y = @chart.y() + (@chart.height() / 2 - total_height / 2)
-      else if align is "end"
-        y = @chart.y2() - total_height
+    dist = Math.abs(outerRadius - innerRadius);
 
-    group.translate(x, y);
+    g = el("g", { "class" : "donut" })
+    path = g.path(attr)
+
+    obj = MathUtil.rotate(0, -outerRadius, MathUtil.radian(startAngle));
+
+    startX = obj.x;
+    startY = obj.y;
+
+    innerCircle = MathUtil.rotate(0, -innerRadius, MathUtil.radian(startAngle));
+
+    startInnerX = innerCircle.x
+    startInnerY = innerCircle.y
+    path.MoveTo(startX, startY)
+
+    obj = MathUtil.rotate(startX, startY, MathUtil.radian(endAngle));
+    innerCircle = MathUtil.rotate(startInnerX, startInnerY, MathUtil.radian(endAngle));
+    g.translate(centerX, centerY);
+
+    bigAngle = if (endAngle > 180) then 1 else 0
+
+    path.Arc(outerRadius, outerRadius, 0, bigAngle, 1, obj.x, obj.y);
+    path.LineTo(innerCircle.x, innerCircle.y);
+    path.Arc(innerRadius, innerRadius, 0, bigAngle, 0, startInnerX, startInnerY);
+    path.ClosePath();
+
+    if hasCircle
+      centerCircle = MathUtil.rotate(0, -innerRadius - dist/2, MathUtil.radian(startAngle));
+
+      cX = centerCircle.x;
+      cY = centerCircle.y;
+
+      centerCircleLine = MathUtil.rotate(cX, cY, MathUtil.radian(endAngle));
+
+      g.circle({
+        cx : centerCircleLine.x,
+        cy : centerCircleLine.y,
+        r : dist/2,
+        fill  : attr.fill
+      });
+
+      g.circle({
+        cx : centerCircleLine.x,
+        cy : centerCircleLine.y,
+        r : 3,
+        fill  : "white"
+      })
+
+    g
+
+  drawBefore : () ->
+    width = @chart.width()
+    height = @chart.height()
+    min = width
+
+    if height < min
+      min = height;
+
+    w = min / 2;
+    centerX = width / 2;
+    centerY = height / 2;
+    startY = -w;
+    startX = 0;
+    outerRadius = Math.abs(startY);
+    innerRadius = outerRadius - @brush.size;
+
+  draw : () ->
+    s = @chart.series(@brush.target[0])
+    group = el("g", "class": "brush donut" ).translate(@chart.x(), @chart.y())
+
+    all = 360;
+    startAngle = 0;
+
+    max = 0;
+    for d in s.data
+      max += d
+
+    for i in [0...s.data.length]
+      data = s.data[i]
+      endAngle = all * (data / max)
+
+      g = @drawDonut(centerX, centerY, innerRadius, outerRadius, startAngle, endAngle, {
+        fill : @chart.color(i, @brush.colors),
+        stroke : @chart.theme("donutBorderColor"),
+        "stroke-width" : @chart.theme("donutBorderWidth")
+      });
+
+      group.append(g);
+      startAngle += endAngle;
+
     group
+class EqualizerBrush extends Brush
+  g
+  zeroY
+  count
+  width
+  barWidth
+  half_width
+
+  innerPadding
+  outerPadding
+  unit
+  gap
+
+  constructor: (@chart, @brush) ->
+    super @chart, @brush
+
+  drawBefore : () ->
+    g = el("g").translate(@chart.x(), @chart.y());
+
+    zeroY = @brush.y(0);
+    count = @chart.data().length;
+
+    innerPadding = @brush.innerPadding || 10
+    outerPadding = @brush.outerPadding || 15
+    unit = @brush.unit ||  5
+    gap = @brush.gap || 5
+
+
+    width = @brush.x.rangeBand();
+    half_width = (width - outerPadding * 2) / 2;
+    barWidth = (width - outerPadding * 2 - (target.length - 1) * innerPadding) / target.length;
+
+  draw : () ->
+    for i in [0...count]
+      startX = @brush.x(i) - half_width
+
+      for j in [0...@brush.target.length]
+        barGroup = g.group();
+        startY = @brush.y(@chart.data(i, @brush.target[j]))
+        padding = 1.5
+        eY = zeroY
+        eIndex = 0
+
+        if startY <= zeroY
+          while (eY > startY)
+            unitHeight = if (eY - unit < startY) then Math.abs(eY - startY) else unit;
+            barGroup.rect({
+              x : startX,
+              y : eY - unitHeight,
+              width : barWidth,
+              height : unitHeight,
+              fill : @chart.color(Math.floor(eIndex / gap), @brush.colors)
+            });
+
+            eY -= unitHeight + padding;
+            eIndex++;
+        else
+          while (eY < startY)
+            unitHeight = if (eY + unit > startY) then Math.abs(eY - startY) else unit;
+            barGroup.rect({
+              x : startX,
+              y : eY,
+              width : barWidth,
+              height : unitHeight,
+              fill : @chart.color(Math.floor(eIndex / gap), @brush.colors)
+            });
+
+            eY += unitHeight + padding;
+            eIndex++;
+
+        startX += barWidth + innerPadding;
+    g
+class FullStackBrush extends Brush
+  g
+  zeroY
+  count
+  width
+  barWidth
+  outerPadding
+
+  constructor : (@chart, @brush) ->
+    super @chart, @brush
+
+  init: () ->
+
+  drawBefore: () ->
+    g = el('g').translate(@chart.x(), @chart.y());
+    zeroY = @brush.y(0);
+    count = @chart.data().length;
+
+    outerPadding = @brush.outerPadding || 15
+
+    width = @brush.x.rangeBand();
+    barWidth = width - outerPadding * 2;
+
+  draw : () ->
+    chart_height = @chart.height();
+
+    for i in [0...count]
+      startX = @brush.x(i) - barWidth / 2
+      sum = 0
+      list = []
+
+      list = for j in [0...@brush.target.length]
+        height = @chart.data(i, @brush.target[j]);
+        sum += height
+        height
+
+      startY = 0
+      max = @brush.y.max()
+      current = max
+
+      for j in [list.length...0]
+        height = chart_height - @brush.y.rate(list[j] , sum);
+
+        g.rect({
+          x : startX,
+          y : startY,
+          width : barWidth,
+          height : height,
+          fill : @chart.color(j, @brush.colors)
+        });
+
+
+        if @brush.text
+          percent = Math.round((list[j]/sum)*max);
+          g.text({
+            x : startX + barWidth / 2,
+            y : startY + height / 2 + 8,
+            "text-anchor" : "middle"
+          }, (if (current - percent < 0 ) then current else percent) + "%");
+
+          current -= percent;
+
+        startY += height;
+    g
+
+
+
+
+class LineBrush extends Brush
+
+  symbol
+
+  constructor : (@chart, @brush) ->
+    super @chart, @brush
+
+  init: () ->
+
+  drawBefore : () ->
+    symbol = @brush.symbol || "normal"
+
+  createLine: (pos, index) ->
+    x = pos.x
+    y = pos.y
+
+    p = el("path", {
+      stroke : @chart.color(index, @brush.colors),
+      "stroke-width" : @chart.theme("lineBorderWidth"),
+      fill : "transparent"
+    }).MoveTo(x[0], y[0]);
+
+    if symbol == "curve"
+      px = @curvePoints(x)
+      py = @curvePoints(y)
+
+      for i in [0...x.length]
+       p.CurveTo(px.p1[i], py.p1[i], px.p2[i], py.p2[i], x[i + 1], y[i + 1])
+    else
+      for i in [0...x.length]
+        if symbol == "step"
+          sx = x[i] + ((x[i + 1] - x[i]) / 2);
+          p.LineTo(sx, y[i]);
+          p.LineTo(sx, y[i + 1])
+
+        p.LineTo(x[i + 1], y[i + 1]);
+
+    p
+
+  drawLine: (path) ->
+    g = el('g').translate(@chart.x(), @chart.y())
+
+    for k in [0...path.length]
+      p = @createLine(path[k], k)
+      g.append(p)
+
+    g
+
+  draw : () ->
+    @drawLine(@getXY())
+
+class PathBrush extends Brush
+  constructor : (@chart, @brush) ->
+    super @chart, @brush
+
+  init: () ->
+
+  draw : () ->
+    g = el("g", "class" : "brush path")
+
+    data = @chart.data()
+    count = data.length
+
+    for ti in [0...@brush.target.length]
+      color = @chart.color(ti, @brush.colors);
+
+      path = g.path({
+        fill : color,
+        "fill-opacity" : @chart.theme("pathOpacity"),
+        stroke : color,
+        "stroke-width" : @chart.theme("pathBorderWidth")
+      });
+
+      for i in [0...count]
+        obj = @brush.c(i, @chart.data(i, @brush.target[ti]));
+
+        if (i == 0)
+          path.MoveTo(obj.x, obj.y)
+        else
+          path.LineTo(obj.x, obj.y)
+
+      path.ClosePath();
+
+    g
 if typeof module isnt "undefined" and typeof module.exports isnt "undefined"
   module.exports = ChartBuilder
 else
