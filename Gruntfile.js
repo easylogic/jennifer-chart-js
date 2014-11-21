@@ -103,13 +103,13 @@ module.exports = function(grunt) {
         dest: "coffee/jennifer-chart.coffee"
       }
     }
-  })
+  });
 
-  grunt.loadNpmTasks('grunt-contrib-coffee')
-  grunt.loadNpmTasks('grunt-contrib-concat')
+  grunt.loadNpmTasks('grunt-contrib-coffee');
+  grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-docco');
-  grunt.loadNpmTasks('grunt-contrib-watch')
+  grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask("default", ["concat", "coffee", "docco"]);
   grunt.registerTask("compile", ["concat", "coffee"]);
-}
+};
