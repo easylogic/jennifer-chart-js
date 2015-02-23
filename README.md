@@ -1,3 +1,8 @@
+# Deprecated 
+
+This projects is deprecated. use jui's npm package instead of it.
+
+
 jennifer-chart-js
 =================
 
